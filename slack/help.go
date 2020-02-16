@@ -1,22 +1,46 @@
 package slack
 
 import (
-	"encoding/json"
 	"fmt"
 	"strings"
 )
 
-func (s *service) makeHelpMessage(recognize bool) ([]byte, error) {
-	text := "The following commands are enabled: "
-	if !recognize {
-		text = "Hmmmm...that is a not a recognized command. Here is a list of commands that are enabled: "
+func (s *service) makeHelpMessage(parsed ParsedCommand) (response, error) {
+
+	res := response{}
+
+	var blob []string
+
+	catLen := len(s.commands)
+
+	for i, category := range s.commands {
+
+		blob = append(blob, fmt.Sprintf("%s - (%s):\n", category.Name, category.Description))
+
+		for _, command := range category.Commands {
+
+			trigger := command.Triggers
+			description := command.Description
+
+			if !command.Strict {
+				trigger = []string{command.Example}
+			}
+
+			text := fmt.Sprintf("\t%s\n\t\t%s", strings.Join(trigger, ", "), description)
+
+			text = fmt.Sprintf("%s\n", text)
+
+			blob = append(blob, text)
+		}
+
+		if i != catLen-1 {
+			blob = append(blob, "\n")
+		}
+
 	}
 
-	message := response{
-		ResponseType: "in_channel",
-		Text:         fmt.Sprintf("%s\n`%s`", text, strings.Join(commands, "` `")),
-	}
+	res.Text = fmt.Sprintf("```%s```", strings.Join(blob, ""))
 
-	return json.Marshal(message)
+	return res, nil
 
 }

@@ -3,19 +3,23 @@ package slack
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"net/http"
-	"net/url"
+	"os"
+	"strings"
 	"time"
 
 	"github.com/sirupsen/logrus"
 )
 
 type Service interface {
-	HandleSlashCommand(ctx context.Context, parsed url.Values)
+	HandleSlashCommand(context.Context, ParsedCommand)
 }
 
 type service struct {
-	logger *logrus.Logger
+	logger   *logrus.Logger
+	commands []Category
+	flat     []Command
 }
 
 type response struct {
@@ -26,40 +30,55 @@ type response struct {
 	Text            string `json:"text"`
 }
 
-func New(logger *logrus.Logger) Service {
-	return &service{
-		logger: logger,
+func (s *service) flattenCommands() {
+	for _, cat := range s.commands {
+		for _, com := range cat.Commands {
+
+			if !com.Strict && com.Prefix == "" {
+				s.logger.Panicf("Non Strict Command with empty prefix detected. Prefix is required on non strict commands")
+				os.Exit(1)
+			}
+
+			s.flat = append(s.flat, com)
+		}
 	}
 }
 
-func (s *service) HandleSlashCommand(ctx context.Context, parsed url.Values) {
+var s = &service{}
 
-	var (
-		message []byte
-		err     error
-	)
+func New(logger *logrus.Logger) Service {
+	s.commands = commands
+	s.logger = logger
+	s.flattenCommands()
+	return s
 
-	time.Sleep(time.Millisecond * 500)
+}
 
-	command := parsed.Get("text")
-	responseURL := parsed.Get("response_url")
-	// Check for an empty command or if they are asking for help
-	if command == "" || command == "help" {
-		if responseURL == "" {
-			s.logger.WithFields(logrus.Fields{
-				"user_id":    parsed.Get("user_id"),
-				"user_name":  parsed.Get("user_name"),
-				"team_id":    parsed.Get("team_id"),
-				"channel_id": parsed.Get("channel_id"),
-				"text":       parsed.Get("text"),
-			}).Error("unable to respond due to missing response url")
+var (
+	res     response
+	message []byte
+	err     error
+)
+
+func (s *service) HandleSlashCommand(ctx context.Context, parsed ParsedCommand) {
+	time.Sleep(time.Millisecond * 250)
+
+	// Check to see if this is a call for help
+	if parsed.Text == "" || parsed.Text == "help" {
+
+		res, err = s.makeHelpMessage(parsed)
+		if err != nil {
+			s.logger.WithError(err).Error("failed to prepare response to help command")
+			return
 		}
-		message, err = s.makeHelpMessage(true)
+
+		message, err = json.Marshal(res)
 		if err != nil {
 			s.logger.WithError(err).Error("failed to marshal response to command")
 			return
 		}
-		err = s.sendSlackResponse(responseURL, message)
+
+		err = s.sendSlackResponse(parsed.ResponseURL, message)
 		if err != nil {
 			s.logger.WithError(err).Error("failed to reply to command")
 			return
@@ -67,25 +86,49 @@ func (s *service) HandleSlashCommand(ctx context.Context, parsed url.Values) {
 		return
 	}
 
-	switch {
-	case strSliceContainsString(greetings, command):
-		message, err = s.makeHelloMessage(parsed.Get("user_id"), parsed.Get("text"))
-	case strSliceContainsString(links, command):
-		message, err = s.makeLinkMessage(command)
-	default:
-		message, err = s.makeHelpMessage(false)
+	action, err := s.determineTriggeredAction(parsed)
+	if err != nil {
+		if err == errCommandUndetermined {
+			s.logger.WithError(err).WithField("parsed", parsed).Error()
+			return
+		}
+		s.logger.WithError(err).Error("unknown error occurred")
+		return
 	}
 
+	res, err = action(parsed)
+	if err != nil {
+		s.logger.WithError(err).Error("an error occurred while prepping a response to the command")
+		return
+	}
+
+	message, err = json.Marshal(res)
+	if err != nil {
+		s.logger.WithError(err).Error("failed to marshal response to command")
+		return
+	}
+
+	err = s.sendSlackResponse(parsed.ResponseURL, message)
 	if err != nil {
 		s.logger.WithError(err).Error("failed to reply to command")
 		return
 	}
+}
 
-	err = s.sendSlackResponse(responseURL, message)
-	if err != nil {
-		s.logger.WithError(err).Error("failed to reply to command")
-		return
+func (s *service) determineTriggeredAction(parsed ParsedCommand) (Action, error) {
+
+	for _, com := range s.flat {
+
+		if com.Strict && strSliceContainsString(com.Triggers, parsed.Text) {
+			return com.Action, nil
+		}
+		if !com.Strict && strings.HasPrefix(parsed.Text, com.Prefix) {
+			return com.Action, nil
+		}
 	}
+
+	return nil, errCommandUndetermined
+
 }
 
 func (s *service) sendSlackResponse(url string, data []byte) error {
