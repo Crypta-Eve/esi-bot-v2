@@ -8,9 +8,9 @@ import (
 
 // This file contains the make commands that return links to help sites
 
-func (s *service) makeLinkMessage(parsed ParsedCommand) (response, error) {
+func (s *service) makeLinkMessage(parsed SlashCommand) (Msg, error) {
 
-	res := response{
+	res := Msg{
 		UnfurlLinks: true,
 
 		ResponseType: "in_channel",
@@ -31,9 +31,9 @@ func (s *service) makeLinkMessage(parsed ParsedCommand) (response, error) {
 	case "faq":
 		res.Text = fmt.Sprintf("%s/docs/FAQ", eb2.ESI_DOCS)
 	case "issues":
-		res.Text = eb2.ESI_ISSUES
+		res.Text = fmt.Sprintf("%s/issues", eb2.ESI_ISSUES)
 	case "sso":
-		res.Text = eb2.SSO_ISSUES
+		res.Text = fmt.Sprintf("%s/issues", eb2.SSO_ISSUES)
 	}
 
 	return res, nil

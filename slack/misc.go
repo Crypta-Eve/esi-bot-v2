@@ -4,11 +4,11 @@ import (
 	"fmt"
 )
 
-func (s *service) makeGreeting(parsed ParsedCommand) (response, error) {
+func (s *service) makeGreeting(parsed SlashCommand) (Msg, error) {
 
 	user := parsed.UserID
 
-	res := response{
+	res := Msg{
 		ResponseType: "in_channel",
 	}
 

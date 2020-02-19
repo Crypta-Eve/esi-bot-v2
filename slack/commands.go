@@ -1,6 +1,6 @@
 package slack
 
-type Action func(ParsedCommand) (response, error)
+type Action func(SlashCommand) (Msg, error)
 
 type Category struct {
 	Name        string
@@ -14,24 +14,11 @@ type Command struct {
 	Description string
 	Category    string
 	Triggers    []string
+	Args        map[string][]string
 	Strict      bool
 	Prefix      string
 	Action      Action
 	Example     string
-}
-
-type ParsedCommand struct {
-	ChannelID   string `mapstructure:"channel_id"`
-	ChannelName string `mapstructure:"channel_name"`
-	Command     string `mapstructure:"command"`
-	ResponseURL string `mapstructure:"response_url"`
-	TeamDomain  string `mapstructure:"team_domain"`
-	TeamID      string `mapstructure:"team_id"`
-	Text        string `mapstructure:"text"`
-	Token       string `mapstructure:"token"`
-	TriggerID   string `mapstructure:"trigger_id"`
-	UserID      string `mapstructure:"user_id"`
-	UserName    string `mapstructure:"user_name"`
 }
 
 var commands = []Category{
@@ -86,6 +73,66 @@ var commands = []Category{
 				Triggers:    []string{"faq"},
 				Strict:      true,
 				Action:      s.makeLinkMessage,
+			},
+		},
+	},
+	Category{
+		Name:        "ESI Issues",
+		Description: "Helpful links for communicating bugs, feature requests, and inconsistencies with the ESI API to the ESI Developers",
+		Commands: []Command{
+			Command{
+				Name:        "new issue",
+				Description: "Instructions for opening a new ESI issue",
+				Triggers:    []string{"new"},
+				Strict:      true,
+				Action:      s.makeIssues,
+			},
+			Command{
+				Name:        "bug report",
+				Description: "Instructions for reporting an ESI bug",
+				Triggers:    []string{"br", "bug"},
+				Strict:      true,
+				Action:      s.makeIssues,
+			},
+			Command{
+				Name:        "feature request",
+				Description: "Return instructions for creating a new feature request",
+				Triggers:    []string{"fr", "feature", "enhancement"},
+				Strict:      true,
+				Action:      s.makeIssues,
+			},
+			Command{
+				Name:        "inconsistency",
+				Description: "Return instructions for reporting an inconsistency.",
+				Triggers:    []string{"incon", "inconsistency"},
+				Strict:      true,
+				Action:      s.makeIssues,
+			},
+		},
+	},
+	Category{
+		Name:        "status",
+		Description: "Commands that can be called to check on the status of endpoint on the ESI API",
+		Commands: []Command{
+			Command{
+				Name:        "status",
+				Description: "Check the health of the endpoints on the ESI API",
+				Triggers:    []string{"status"},
+				Args: map[string][]string{
+					"version": []string{
+						"meta", "legacy", "dev", "latest",
+					},
+				},
+				Strict: true,
+				Action: s.makeESIStatusMessage,
+			},
+			Command{
+				Name:        "server status",
+				Description: "Check the uptime and player count of the Eve Servers",
+				Triggers:    []string{"tq", "tranquility"},
+				Args:        map[string][]string{},
+				Strict:      true,
+				Action:      s.makeEveServerStatusMessage,
 			},
 		},
 	},

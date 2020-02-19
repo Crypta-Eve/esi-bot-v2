@@ -5,9 +5,9 @@ import (
 	"strings"
 )
 
-func (s *service) makeHelpMessage(parsed ParsedCommand) (response, error) {
+func (s *service) makeHelpMessage(parsed SlashCommand) (Msg, error) {
 
-	res := response{}
+	res := Msg{}
 
 	var blob []string
 

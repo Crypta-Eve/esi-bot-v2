@@ -13,21 +13,13 @@ import (
 )
 
 type Service interface {
-	HandleSlashCommand(context.Context, ParsedCommand)
+	HandleSlashCommand(context.Context, SlashCommand)
 }
 
 type service struct {
 	logger   *logrus.Logger
 	commands []Category
 	flat     []Command
-}
-
-type response struct {
-	DeleteOriginal  bool   `json:"delete_original,omitempty"`
-	ReplaceOriginal bool   `json:"replace_original,omitempty"`
-	UnfurlLinks     bool   `json:"unfurl_links,omitempty"`
-	ResponseType    string `json:"response_type,omitempty"`
-	Text            string `json:"text"`
 }
 
 func (s *service) flattenCommands() {
@@ -55,18 +47,19 @@ func New(logger *logrus.Logger) Service {
 }
 
 var (
-	res     response
-	message []byte
-	err     error
+	res       Msg
+	message   []byte
+	err       error
+	layoutESI = "Mon, 02 Jan 2006 15:04:05 MST"
 )
 
-func (s *service) HandleSlashCommand(ctx context.Context, parsed ParsedCommand) {
+func (s *service) HandleSlashCommand(ctx context.Context, command SlashCommand) {
 	time.Sleep(time.Millisecond * 250)
 
 	// Check to see if this is a call for help
-	if parsed.Text == "" || parsed.Text == "help" {
+	if command.Text == "" || command.Text == "help" {
 
-		res, err = s.makeHelpMessage(parsed)
+		res, err = s.makeHelpMessage(command)
 		if err != nil {
 			s.logger.WithError(err).Error("failed to prepare response to help command")
 			return
@@ -78,7 +71,7 @@ func (s *service) HandleSlashCommand(ctx context.Context, parsed ParsedCommand) 
 			return
 		}
 
-		err = s.sendSlackResponse(parsed.ResponseURL, message)
+		err = s.sendSlackResponse(command.ResponseURL, message)
 		if err != nil {
 			s.logger.WithError(err).Error("failed to reply to command")
 			return
@@ -86,17 +79,17 @@ func (s *service) HandleSlashCommand(ctx context.Context, parsed ParsedCommand) 
 		return
 	}
 
-	action, err := s.determineTriggeredAction(parsed)
+	action, err := s.determineTriggeredAction(command)
 	if err != nil {
-		if err == errCommandUndetermined {
-			s.logger.WithError(err).WithField("parsed", parsed).Error()
+		if _, ok := knownErrs[err]; ok {
+			s.logger.WithError(err).WithField("command", command).Error()
 			return
 		}
 		s.logger.WithError(err).Error("unknown error occurred")
 		return
 	}
 
-	res, err = action(parsed)
+	res, err := action(command)
 	if err != nil {
 		s.logger.WithError(err).Error("an error occurred while prepping a response to the command")
 		return
@@ -108,26 +101,53 @@ func (s *service) HandleSlashCommand(ctx context.Context, parsed ParsedCommand) 
 		return
 	}
 
-	err = s.sendSlackResponse(parsed.ResponseURL, message)
+	err = s.sendSlackResponse(command.ResponseURL, message)
 	if err != nil {
 		s.logger.WithError(err).Error("failed to reply to command")
 		return
 	}
 }
 
-func (s *service) determineTriggeredAction(parsed ParsedCommand) (Action, error) {
+func (s *service) determineTriggeredAction(command SlashCommand) (Action, error) {
+
+	var triggered *Command
 
 	for _, com := range s.flat {
 
-		if com.Strict && strSliceContainsString(com.Triggers, parsed.Text) {
-			return com.Action, nil
+		if com.Strict && strSliceContainsString(com.Triggers, command.Text) {
+			triggered = &com
+			break
 		}
-		if !com.Strict && strings.HasPrefix(parsed.Text, com.Prefix) {
-			return com.Action, nil
+		if !com.Strict && strings.HasPrefix(command.Text, com.Prefix) {
+			triggered = &com
+			break
+		}
+	}
+	if triggered == nil {
+		return nil, errCommandUndetermined
+	}
+
+	if len(triggered.Args) == 0 || len(command.Args) == 0 {
+		return triggered.Action, nil
+	}
+
+	for comArgKey, comArgVal := range command.Args {
+		if _, ok := triggered.Args[comArgKey]; !ok {
+			return nil, errCommandWithInvalidArgs
+		}
+		isValidValue := false
+		for _, trigVal := range triggered.Args[comArgKey] {
+			if trigVal == comArgVal {
+				isValidValue = true
+				break
+			}
+		}
+		if !isValidValue {
+			return nil, errCommandWithInvalidArgValue
 		}
 	}
 
-	return nil, errCommandUndetermined
+	return triggered.Action, nil
 
 }
 
