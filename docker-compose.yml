@@ -1,0 +1,12 @@
+version: "3.7"
+
+services:
+    bot:
+        image: esibot:latest
+        network_mode: "host"
+        restart: on-failure
+        command: ./eb2
+        container_name: bot
+        hostname: bot
+        env_file:
+            - .env-docker
