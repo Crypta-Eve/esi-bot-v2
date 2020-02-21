@@ -15,6 +15,7 @@ type Command struct {
 	Category    string
 	Triggers    []string
 	Args        map[string][]string
+	StrictArgs  bool
 	Strict      bool
 	Prefix      string
 	Action      Action
@@ -123,8 +124,9 @@ var commands = []Category{
 						"meta", "legacy", "dev", "latest",
 					},
 				},
-				Strict: true,
-				Action: s.makeESIStatusMessage,
+				StrictArgs: true,
+				Strict:     true,
+				Action:     s.makeESIStatusMessage,
 			},
 			Command{
 				Name:        "server status",
@@ -133,6 +135,18 @@ var commands = []Category{
 				Args:        map[string][]string{},
 				Strict:      true,
 				Action:      s.makeEveServerStatusMessage,
+			},
+		},
+	},
+	Category{
+		Name:        "Requests",
+		Description: "Commands that allow you to make requests to none meta endpoints the ESI API",
+		Commands: []Command{
+			Command{
+				Name:        "request",
+				Description: "Send through any valid esi endpoint and get back a json dump of its results",
+				Prefix:      "/",
+				Action:      s.makeESIDynamicRequestMessage,
 			},
 		},
 	},

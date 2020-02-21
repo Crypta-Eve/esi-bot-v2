@@ -38,7 +38,7 @@ func main() {
 
 	logger.SetLevel(loglvl)
 
-	slackServ := slack.New(logger)
+	slackServ := slack.New(logger, &cfg)
 
 	server := server.NewServer(&cfg, logger, slackServ)
 

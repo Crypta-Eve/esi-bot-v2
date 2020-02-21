@@ -89,7 +89,7 @@ func ParseSlashCommand(values url.Values) (s SlashCommand, err error) {
 	text := values.Get("text")
 	args := strings.Split(text, " ")
 	if len(args) > 1 {
-		s.Args = make(map[string]string, 0)
+		s.Args = make(map[string]string)
 		for _, arg := range args[1:] {
 			argAttr := strings.Split(arg, "=")
 			if len(argAttr) > 2 {
@@ -109,4 +109,14 @@ func ParseSlashCommand(values url.Values) (s SlashCommand, err error) {
 	s.ResponseURL = values.Get("response_url")
 	s.TriggerID = values.Get("trigger_id")
 	return s, nil
+}
+
+// File contains all the information for a file
+type File struct {
+	Channels       string `json:"channels"`
+	Content        string `json:"content"`
+	FileName       string `json:"filename"`
+	FileType       string `json:"filetype"`
+	InitialComment string `json:"intial_comment"`
+	Title          string `json:"title"`
 }

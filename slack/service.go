@@ -4,10 +4,14 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"strings"
 	"time"
+
+	"github.com/eveisesi/eb2"
 
 	"github.com/sirupsen/logrus"
 )
@@ -18,6 +22,7 @@ type Service interface {
 
 type service struct {
 	logger   *logrus.Logger
+	config   *eb2.Config
 	commands []Category
 	flat     []Command
 }
@@ -37,10 +42,31 @@ func (s *service) flattenCommands() {
 }
 
 var s = &service{}
+var rl = [][]string{}
 
-func New(logger *logrus.Logger) Service {
+func New(logger *logrus.Logger, config *eb2.Config) Service {
 	s.commands = commands
 	s.logger = logger
+	s.config = config
+
+	version := "latest"
+
+	// This is terrible. Find another way
+	parsed := SlashCommand{
+		Args: map[string]string{"version": "latest"},
+	}
+
+	s.makeESIStatusMessage(parsed)
+
+	routes, _ := checkCache(version)
+	for _, route := range routes {
+		if route.Method == "get" {
+			s := strings.TrimPrefix(route.Route, "/")
+			s = strings.TrimSuffix(s, "/")
+			rl = append(rl, strings.Split(s, "/"))
+		}
+	}
+
 	s.flattenCommands()
 	return s
 
@@ -142,7 +168,7 @@ func (s *service) determineTriggeredAction(command SlashCommand) (Action, error)
 				break
 			}
 		}
-		if !isValidValue {
+		if triggered.StrictArgs && !isValidValue {
 			return nil, errCommandWithInvalidArgValue
 		}
 	}
@@ -152,9 +178,22 @@ func (s *service) determineTriggeredAction(command SlashCommand) (Action, error)
 }
 
 func (s *service) sendSlackResponse(url string, data []byte) error {
-	_, err := http.Post(url, "application/json", bytes.NewBuffer(data))
+	resp, err := http.Post(url, "application/json", bytes.NewBuffer(data))
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
 
-	return err
+	rdata, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+	if resp.StatusCode != 200 {
+		fmt.Println(string(rdata), string(data))
+		return fmt.Errorf("received error attempting to response to slack command: %d, %s", resp.StatusCode, string(rdata))
+	}
+
+	return nil
 }
 
 func strSliceContainsString(haystack []string, needle string) bool {

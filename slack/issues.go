@@ -3,11 +3,10 @@ package slack
 import (
 	"fmt"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/eveisesi/eb2"
 )
 
-var new = Attachment{
+var newA = Attachment{
 	Title: "Opening a new issue",
 	Text:  fmt.Sprintf("Before opening a new issues, please use the <%s/issues|search function> to see if a similar issue exists, or has already been created.", eb2.ESI_ISSUES),
 }
@@ -64,24 +63,22 @@ func (s *service) makeIssues(parsed SlashCommand) (Msg, error) {
 	switch parsed.Text {
 	case "bug", "br":
 		msg.Attachments = []Attachment{
-			new, br,
+			newA, br,
 		}
 	case "feature", "fr", "enhancement":
 		msg.Attachments = []Attachment{
-			new, fr,
+			newA, fr,
 		}
 	case "inconsistency":
 		msg.Attachments = []Attachment{
-			new, incon,
+			newA, incon,
 		}
 	default:
 		msg.Attachments = []Attachment{
-			new, br, fr, incon,
+			newA, br, fr, incon,
 		}
 
 	}
-
-	spew.Dump(msg)
 
 	return msg, nil
 
