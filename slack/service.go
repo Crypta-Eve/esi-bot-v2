@@ -57,9 +57,9 @@ func New(logger *logrus.Logger, config *eb2.Config) Service {
 		}
 	}
 
-	// go func(channel string, text string) {
-	// 	_, _, _ = s.goslack.PostMessage(s.channels[0], nslack.MsgOptionText(getStartupMessage(), false))
-	// }(s.channels[0], getStartupMessage())
+	go func(channel string, text string) {
+		_, _, _ = s.goslack.PostMessage(s.channels[0], nslack.MsgOptionText(getStartupMessage(), false))
+	}(s.channels[0], getStartupMessage())
 
 	return s
 
