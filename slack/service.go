@@ -128,7 +128,8 @@ func (s *service) HandleMessageEvent(ctx context.Context, sevent *slackevents.Me
 	}
 
 	// Determine if the rest of the text is long enough to be an arg or flag
-	if len(text[1:]) >= 1 {
+	if len(text) >= 1 {
+		event.flags = make(map[string]string)
 		// Treat remain pieces as args until we can parse them into flags
 		for _, arg := range text[1:] {
 			if strings.HasPrefix(arg, "--") {
