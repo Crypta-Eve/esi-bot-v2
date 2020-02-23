@@ -3,6 +3,7 @@ package slack
 import (
 	"context"
 	"strings"
+	"time"
 
 	"github.com/eveisesi/eb2"
 	"github.com/google/go-github/v29/github"
@@ -58,7 +59,10 @@ func New(logger *logrus.Logger, config *eb2.Config) Service {
 	}
 
 	go func(channel string, text string) {
-		_, _, _ = s.goslack.PostMessage(s.channels[0], nslack.MsgOptionText(getStartupMessage(), false))
+		for _, c := range s.channels {
+			_, _, _ = s.goslack.PostMessage(c, nslack.MsgOptionText(getStartupMessage(), false))
+			time.Sleep(time.Millisecond * 500)
+		}
 	}(s.channels[0], getStartupMessage())
 
 	return s
