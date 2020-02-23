@@ -12,6 +12,14 @@ func (s *service) makeHelpMessage(event Event) {
 
 	var blob []string
 
+	public := false
+
+	if p, ok := event.flags["public"]; ok {
+		if p == "1" {
+			public = true
+		}
+	}
+
 	catLen := len(s.commands)
 
 	for i, category := range s.commands {
@@ -36,15 +44,32 @@ func (s *service) makeHelpMessage(event Event) {
 		}
 	}
 
-	s.logger.Info("Responding to request for help")
-	channel, timestamp, err := s.goslack.PostMessage(event.origin.Channel, nslack.MsgOptionText(text, false))
+	if public {
+
+		s.logger.Info("Responding to request for help")
+		channel, timestamp, err := s.goslack.PostMessage(event.origin.Channel, nslack.MsgOptionText(text, false))
+		if err != nil {
+			s.logger.WithError(err).Error("failed to respond to request for help.")
+			return
+		}
+		s.logger.WithFields(logrus.Fields{
+			"channel":   channel,
+			"timestamp": timestamp,
+		}).Info("successfully responded with request for help")
+		return
+
+	}
+
+	s.logger.Info("Responding to request for help (ephemeral)")
+	timestamp, err := s.goslack.PostEphemeral(event.origin.Channel, event.origin.User, nslack.MsgOptionText(text, false))
 	if err != nil {
-		s.logger.WithError(err).Error("failed to respond to request for help.")
+		s.logger.WithError(err).Error("failed to respond to request for help (ephemeral).")
 		return
 	}
 	s.logger.WithFields(logrus.Fields{
-		"channel":   channel,
+		"user":      event.origin.User,
+		"channel":   event.origin.Channel,
 		"timestamp": timestamp,
-	}).Info("successfully responded with request for help")
+	}).Info("successfully responded with request for help (ephemeral).")
 
 }
