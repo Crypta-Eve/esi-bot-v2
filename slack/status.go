@@ -10,7 +10,9 @@ import (
 	"time"
 
 	"github.com/eveisesi/eb2"
+	nslack "github.com/nlopes/slack"
 	"github.com/patrickmn/go-cache"
+	"github.com/sirupsen/logrus"
 )
 
 type StatusCategory struct {
@@ -34,56 +36,64 @@ var categories = []StatusCategory{
 
 var statusCache = cache.New(time.Minute*1, time.Second*30)
 
-func (s *service) makeEveServerStatusMessage(parsed SlashCommand) (Msg, error) {
-
-	msg := Msg{}
+func (s *service) makeEveServerStatusMessage(event Event) {
 
 	uri, _ := url.Parse(eb2.ESI_BASE)
 	uri.Path = "/v1/status"
 
 	resp, err := http.Get(uri.String())
 	if err != nil {
-		return Msg{}, err
+		_, _, _ = s.goslack.PostMessage(event.origin.Channel, nslack.MsgOptionText(err.Error(), true))
+		return
 	}
 	defer resp.Body.Close()
-
+	var attachment nslack.Attachment
 	if resp.StatusCode > 200 {
 
 		if resp.StatusCode != 503 {
 			indeterminate := "Cannet Determine server status. It might be offline, or experiencing connectivity issues."
-			msg.Attachments = []Attachment{
-				Attachment{
-					Color: "danger",
-					// Leaving this like this so that we can support other servers in the future
-					Title:    fmt.Sprintf("%s status", "Tranquility"),
-					Text:     indeterminate,
-					Fallback: fmt.Sprintf("%s Status: %s", "Tranquility", indeterminate),
-				},
+			attachment = nslack.Attachment{
+				Color: "danger",
+				// Leaving this like this so that we can support other servers in the future
+				Title:    fmt.Sprintf("%s status", "Tranquility"),
+				Text:     indeterminate,
+				Fallback: fmt.Sprintf("%s Status: %s", "Tranquility", indeterminate),
 			}
 
-			return msg, nil
-		}
-
-		msg.Attachments = []Attachment{
-			Attachment{
+		} else {
+			attachment = nslack.Attachment{
 				Color: "danger",
 				// Leaving this like this so that we can support other servers in the future
 				Title:    fmt.Sprintf("%s status", "Tranquility"),
 				Text:     "Offline",
 				Fallback: fmt.Sprintf("%s Status: Offline", "Tranquility"),
-			},
+			}
 		}
+
+		s.logger.Info("Responding to request for eve server status")
+		channel, timestamp, err := s.goslack.PostMessage(event.origin.Channel, nslack.MsgOptionAttachments(attachment))
+		if err != nil {
+			s.logger.WithError(err).Error("failed to respond to request for eve server status.")
+			return
+		}
+		s.logger.WithFields(logrus.Fields{
+			"channel":   channel,
+			"timestamp": timestamp,
+		}).Info("successfully responded to request for eve server status")
+		return
 
 	}
 
 	data, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return Msg{}, err
+		_, _, _ = s.goslack.PostMessage(event.origin.Channel, nslack.MsgOptionText(err.Error(), true))
+		return
 	}
 	var status eb2.ServerStatus
 	err = json.Unmarshal(data, &status)
 	if err != nil {
-		return Msg{}, err
+		_, _, _ = s.goslack.PostMessage(event.origin.Channel, nslack.MsgOptionText(err.Error(), true))
+		return
 	}
 	color := "good"
 	inVip := ""
@@ -91,31 +101,38 @@ func (s *service) makeEveServerStatusMessage(parsed SlashCommand) (Msg, error) {
 		color = "warning"
 		inVip = ", in VIP"
 	}
-	msg.Attachments = []Attachment{
-		Attachment{
-			Color: color,
-			Title: fmt.Sprintf("%s status", "Tranquility"),
-			Fields: []AttachmentField{
-				AttachmentField{
-					Title: "Players Online",
-					Value: fmt.Sprintf("%d", status.Players),
-				},
-				AttachmentField{
-					Title: "Started At",
-					Value: status.StartTime.Format(layoutESI),
-					Short: true,
-				},
-				AttachmentField{
-					Title: "Running For",
-					Value: determineServerRunTime(status.StartTime),
-					Short: true,
-				},
+	attachment = nslack.Attachment{
+		Color: color,
+		Title: fmt.Sprintf("%s status", "Tranquility"),
+		Fields: []nslack.AttachmentField{
+			nslack.AttachmentField{
+				Title: "Players Online",
+				Value: fmt.Sprintf("%d", status.Players),
 			},
-			Fallback: fmt.Sprintf("%s status: %d player online, started at %s%s", "Tranquility", status.Players, status.StartTime.Format(layoutESI), inVip),
+			nslack.AttachmentField{
+				Title: "Started At",
+				Value: status.StartTime.Format(layoutESI),
+				Short: true,
+			},
+			nslack.AttachmentField{
+				Title: "Running For",
+				Value: determineServerRunTime(status.StartTime),
+				Short: true,
+			},
 		},
+		Fallback: fmt.Sprintf("%s status: %d player online, started at %s%s", "Tranquility", status.Players, status.StartTime.Format(layoutESI), inVip),
 	}
 
-	return msg, err
+	s.logger.Info("Responding to request for eve server status")
+	channel, timestamp, err := s.goslack.PostMessage(event.origin.Channel, nslack.MsgOptionAttachments(attachment))
+	if err != nil {
+		s.logger.WithError(err).Error("failed to respond to request for eve server status.")
+		return
+	}
+	s.logger.WithFields(logrus.Fields{
+		"channel":   channel,
+		"timestamp": timestamp,
+	}).Info("successfully responded to request for eve server status")
 }
 
 func determineServerRunTime(from time.Time) string {
@@ -125,39 +142,52 @@ func determineServerRunTime(from time.Time) string {
 
 }
 
-func (s *service) makeESIStatusMessage(parsed SlashCommand) (Msg, error) {
+func fetchRouteStatuses(version string) (routes []*eb2.ESIStatus, err error) {
 
 	uri, _ := url.Parse(eb2.ESI_BASE)
 	uri.Path = "status.json"
 
+	query := url.Values{}
+	query.Set("version", version)
+
+	uri.RawQuery = query.Encode()
+
+	resp, err := http.Get(uri.String())
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	data, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	err = json.Unmarshal(data, &routes)
+	if err != nil {
+		return nil, err
+	}
+
+	statusCache.Set(version, routes, 0)
+
+	return
+
+}
+
+func (s *service) makeESIStatusMessage(event Event) {
+
 	version := "latest"
-	if _, ok := parsed.Args["version"]; ok {
-		version = parsed.Args["version"]
+	if _, ok := event.flags["version"]; ok {
+		version = event.flags["version"]
 	}
 
 	routes, found := checkCache(version)
-	s.logger.WithField("cache_hit", found).Info("processing request for esi route status")
 	if !found {
 
-		query := url.Values{}
-		query.Set("version", version)
-
-		uri.RawQuery = query.Encode()
-
-		resp, err := http.Get(uri.String())
+		routes, err := fetchRouteStatuses(version)
 		if err != nil {
-			return Msg{}, err
-		}
-		defer resp.Body.Close()
-
-		data, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			return Msg{}, err
-		}
-
-		err = json.Unmarshal(data, &routes)
-		if err != nil {
-			return Msg{}, err
+			_, _, _ = s.goslack.PostMessage(event.origin.Channel, nslack.MsgOptionText(err.Error(), true))
+			return
 		}
 
 		statusCache.Flush()
@@ -165,22 +195,21 @@ func (s *service) makeESIStatusMessage(parsed SlashCommand) (Msg, error) {
 
 	}
 
-	var attachments []Attachment
+	var attachments []nslack.Attachment
 	for _, category := range categories {
-		categoryRoutes := []eb2.ESIStatus{}
+		categoryRoutes := []*eb2.ESIStatus{}
 		for _, route := range routes {
 			if route.Status == category.Status {
-
 				categoryRoutes = append(categoryRoutes, route)
 			}
 		}
 
 		if len(categoryRoutes) > 0 {
 
-			attachment := Attachment{
+			attachment := nslack.Attachment{
 				Color: category.Color,
 				Fallback: fmt.Sprintf(
-					"%s: %d out of %d, %.3f",
+					"%s: %d out of %d, %.3f%%",
 					strings.Title(category.Status),
 					len(categoryRoutes),
 					len(routes),
@@ -190,7 +219,7 @@ func (s *service) makeESIStatusMessage(parsed SlashCommand) (Msg, error) {
 					"%s %s %s %s",
 					category.Emoji,
 					fmt.Sprintf(
-						"%d %s (out of %d,  %.3f)",
+						"%d %s (out of %d,  %.3f%%)",
 						len(categoryRoutes),
 						strings.Title(category.Status),
 						len(routes),
@@ -205,33 +234,40 @@ func (s *service) makeESIStatusMessage(parsed SlashCommand) (Msg, error) {
 
 	}
 	if len(attachments) == 0 {
-		attachments = append(attachments, Attachment{
+		attachments = append(attachments, nslack.Attachment{
 			Text: ":ok_hand:",
 		})
 	}
 
-	return Msg{
-		Attachments: attachments,
-	}, nil
+	s.logger.Info("Responding to request for esi route status.")
+	channel, timestamp, err := s.goslack.PostMessage(event.origin.Channel, nslack.MsgOptionAttachments(attachments...))
+	if err != nil {
+		s.logger.WithError(err).Error("failed to respond to request for esi route status.")
+		return
+	}
+	s.logger.WithFields(logrus.Fields{
+		"channel":   channel,
+		"timestamp": timestamp,
+	}).Info("successfully responded to request for esi route status.")
 
 }
 
-func checkCache(version string) ([]eb2.ESIStatus, bool) {
+func checkCache(version string) ([]*eb2.ESIStatus, bool) {
 	check, found := statusCache.Get(version)
 	if found {
-		return check.([]eb2.ESIStatus), true
+		return check.([]*eb2.ESIStatus), true
 	}
-	return []eb2.ESIStatus{}, false
+	return nil, false
 }
 
 func percentage(top int, bottom int) float64 {
 	if bottom == 0 {
 		return 0.00
 	}
-	return 1 - (float64(top) / float64(bottom) * 100)
+	return 1 - ((float64(top) / float64(bottom)) * 100)
 }
 
-func generateRoutesString(routes []eb2.ESIStatus) string {
+func generateRoutesString(routes []*eb2.ESIStatus) string {
 
 	if len(routes) == 0 {
 		return ""

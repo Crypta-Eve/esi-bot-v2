@@ -1,7 +1,10 @@
 package server
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"time"
 
@@ -41,29 +44,23 @@ func (l *StructuredLogger) NewLogEntry(r *http.Request) middleware.LogEntry {
 	entry := &StructuredLoggerEntry{Logger: logrus.NewEntry(l.Logger)}
 	logFields := logrus.Fields{}
 
-	// Force output to CST, the RV Standard
-	location, _ := time.LoadLocation("America/Chicago")
-
-	logFields["ts"] = time.Now().In(location).Format(time.RFC1123)
-
-	if reqID := middleware.GetReqID(r.Context()); reqID != "" {
-		logFields["req_id"] = reqID
-	}
-
-	scheme := "http"
-	if r.TLS != nil {
-		scheme = "https"
-	}
-
-	logFields["application"] = "agentx-pathfinder-api"
-	logFields["http_scheme"] = scheme
-	logFields["http_proto"] = r.Proto
-	logFields["http_method"] = r.Method
+	logFields["ts"] = time.Now().Format(time.RFC1123)
 
 	logFields["remote_addr"] = r.RemoteAddr
 	logFields["user_agent"] = r.UserAgent()
 
-	logFields["uri"] = fmt.Sprintf("%s://%s%s", scheme, r.Host, r.RequestURI)
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		entry.Logger = entry.Logger.WithFields(logFields)
+		return entry
+	}
+
+	r.Body = ioutil.NopCloser(bytes.NewBuffer(body))
+
+	var fields map[string]interface{}
+	json.Unmarshal(body, &fields)
+
+	logFields["data"] = fields
 
 	entry.Logger = entry.Logger.WithFields(logFields)
 

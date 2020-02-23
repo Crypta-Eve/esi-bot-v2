@@ -4,21 +4,19 @@ import (
 	"fmt"
 
 	"github.com/eveisesi/eb2"
+	nslack "github.com/nlopes/slack"
+	"github.com/sirupsen/logrus"
 )
 
 // This file contains the make commands that return links to help sites
 
-func (s *service) makeLinkMessage(parsed SlashCommand) (Msg, error) {
+func (s *service) makeLinkMessage(event Event) {
 
-	res := Msg{
-		UnfurlLinks: true,
+	text := ""
 
-		ResponseType: "in_channel",
-	}
-
-	switch parsed.Text {
+	switch event.trigger {
 	case "id", "ids", "ranges":
-		res.Text = fmt.Sprintf(
+		text = fmt.Sprintf(
 			"ID Ranges References: \n\t\t%s\nAsset `location_id` reference:\n\t\t%s",
 			eb2.ID_RANGES,
 			fmt.Sprintf(
@@ -27,15 +25,26 @@ func (s *service) makeLinkMessage(parsed SlashCommand) (Msg, error) {
 			),
 		)
 	case "source", "repo":
-		res.Text = fmt.Sprintf("I'm an open source bot. If you want to contribute or you're curious how I work, my source is available for you to browse here: %s", eb2.SOURCE)
+		text = fmt.Sprintf("I'm an open source bot. If you want to contribute or you're curious how I work, my source is available for you to browse here: %s", eb2.SOURCE)
 	case "faq":
-		res.Text = fmt.Sprintf("%s/docs/FAQ", eb2.ESI_DOCS)
+		text = fmt.Sprintf("%s/docs/FAQ", eb2.ESI_DOCS)
 	case "issues":
-		res.Text = fmt.Sprintf("%s/issues", eb2.ESI_ISSUES)
+		text = fmt.Sprintf("%s/issues", eb2.ESI_ISSUES)
 	case "sso":
-		res.Text = fmt.Sprintf("%s/issues", eb2.SSO_ISSUES)
+		text = fmt.Sprintf("%s/issues", eb2.SSO_ISSUES)
 	}
 
-	return res, nil
+	s.logger.Info("Responding to a request for a link")
+	channel, timestamp, err := s.goslack.PostMessage(event.origin.Channel, nslack.MsgOptionText(text, false), nslack.MsgOptionPostMessageParameters(nslack.PostMessageParameters{
+		UnfurlLinks: true,
+	}))
+	if err != nil {
+		s.logger.WithError(err).Error("failed to a request for a link.")
+		return
+	}
+	s.logger.WithFields(logrus.Fields{
+		"channel":   channel,
+		"timestamp": timestamp,
+	}).Info("successfully responded to a request for a link")
 
 }

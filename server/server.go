@@ -47,10 +47,11 @@ func (s *Server) Shutdown(ctx context.Context) error {
 func (s *Server) BuildRouter() http.Handler {
 	r := chi.NewRouter()
 
-	r.Use(Cors)
+	// r.Use(Cors)
 	r.Use(middleware.RequestID)
 	r.Use(middleware.RealIP)
 	r.Use(middleware.Recoverer)
+	r.Use(NewStructuredLogger(s.Logger))
 
 	r.Post("/slack", s.handlePostSlack)
 
@@ -65,11 +66,7 @@ func (s *Server) WriteSuccess(ctx context.Context, w http.ResponseWriter, data i
 	w.WriteHeader(status)
 
 	if data != nil {
-		err := json.NewEncoder(w).Encode(data)
-		if err != nil {
-			_, _ = w.Write([]byte("fatal error encountered writing response"))
-			return
-		}
+		_ = json.NewEncoder(w).Encode(data)
 	}
 
 }
@@ -77,19 +74,17 @@ func (s *Server) WriteSuccess(ctx context.Context, w http.ResponseWriter, data i
 func (s *Server) WriteError(ctx context.Context, w http.ResponseWriter, data error, status int) {
 
 	w.Header().Set("Content-Type", "application/json")
-
 	w.WriteHeader(status)
 
 	if data != nil {
-		err := json.NewEncoder(w).Encode(struct {
+		msg := struct {
 			Message string `json:"message"`
 		}{
 			Message: data.Error(),
-		})
-		if err != nil {
-			_, _ = w.Write([]byte("fatal error encountered writing response"))
-			return
 		}
+
+		_ = json.NewEncoder(w).Encode(msg)
+
 	}
 
 }

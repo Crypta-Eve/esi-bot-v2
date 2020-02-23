@@ -1,23 +1,17 @@
 package slack
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
-	"fmt"
-	"io/ioutil"
-	"net/http"
-	"os"
 	"strings"
-	"time"
 
 	"github.com/eveisesi/eb2"
-
+	nslack "github.com/nlopes/slack"
+	"github.com/nlopes/slack/slackevents"
 	"github.com/sirupsen/logrus"
 )
 
 type Service interface {
-	HandleSlashCommand(context.Context, SlashCommand)
+	HandleMessageEvent(context.Context, *slackevents.MessageEvent)
 }
 
 type service struct {
@@ -25,40 +19,34 @@ type service struct {
 	config   *eb2.Config
 	commands []Category
 	flat     []Command
+	channels []string
+	goslack  *nslack.Client
 }
 
-func (s *service) flattenCommands() {
-	for _, cat := range s.commands {
-		for _, com := range cat.Commands {
-
-			if !com.Strict && com.Prefix == "" {
-				s.logger.Panicf("Non Strict Command with empty prefix detected. Prefix is required on non strict commands")
-				os.Exit(1)
-			}
-
-			s.flat = append(s.flat, com)
-		}
-	}
-}
-
-var s = &service{}
-var rl = [][]string{}
+var (
+	layoutESI = "Mon, 02 Jan 2006 15:04:05 MST"
+	rl        = [][]string{}
+)
 
 func New(logger *logrus.Logger, config *eb2.Config) Service {
-	s.commands = commands
-	s.logger = logger
-	s.config = config
 
-	version := "latest"
+	s := &service{
 
-	// This is terrible. Find another way
-	parsed := SlashCommand{
-		Args: map[string]string{"version": "latest"},
+		logger:   logger,
+		config:   config,
+		channels: strings.Split(config.SlackAllowedChannels, ","),
+		goslack:  nslack.New(config.SlackAPIToken),
 	}
 
-	s.makeESIStatusMessage(parsed)
+	commands := s.BuildCommands()
 
-	routes, _ := checkCache(version)
+	s.commands = commands
+	s.flat = s.flattenCommands(commands)
+
+	routes, err := fetchRouteStatuses("latest")
+	if err != nil {
+		logger.WithError(err).Fatal("failed to load esi route status")
+	}
 	for _, route := range routes {
 		if route.Method == "get" {
 			s := strings.TrimPrefix(route.Route, "/")
@@ -67,136 +55,121 @@ func New(logger *logrus.Logger, config *eb2.Config) Service {
 		}
 	}
 
-	s.flattenCommands()
+	// go func(channel string, text string) {
+	// 	_, _, _ = s.goslack.PostMessage(s.channels[0], nslack.MsgOptionText(getStartupMessage(), false))
+	// }(s.channels[0], getStartupMessage())
+
 	return s
 
 }
 
-var (
-	res       Msg
-	message   []byte
-	err       error
-	layoutESI = "Mon, 02 Jan 2006 15:04:05 MST"
-)
-
-func (s *service) HandleSlashCommand(ctx context.Context, command SlashCommand) {
-	time.Sleep(time.Millisecond * 250)
-
-	// Check to see if this is a call for help
-	if command.Text == "" || command.Text == "help" {
-
-		res, err = s.makeHelpMessage(command)
-		if err != nil {
-			s.logger.WithError(err).Error("failed to prepare response to help command")
-			return
+func (s *service) flattenCommands(commands []Category) []Command {
+	var list = make([]Command, 0)
+	for _, cat := range commands {
+		for _, com := range cat.Commands {
+			com.Category = cat
+			list = append(list, com)
 		}
-
-		message, err = json.Marshal(res)
-		if err != nil {
-			s.logger.WithError(err).Error("failed to marshal response to command")
-			return
-		}
-
-		err = s.sendSlackResponse(command.ResponseURL, message)
-		if err != nil {
-			s.logger.WithError(err).Error("failed to reply to command")
-			return
-		}
-		return
 	}
 
-	action, err := s.determineTriggeredAction(command)
-	if err != nil {
-		if _, ok := knownErrs[err]; ok {
-			s.logger.WithError(err).WithField("command", command).Error()
-			return
-		}
-		s.logger.WithError(err).Error("unknown error occurred")
-		return
-	}
-
-	res, err := action(command)
-	if err != nil {
-		s.logger.WithError(err).Error("an error occurred while prepping a response to the command")
-		return
-	}
-
-	message, err = json.Marshal(res)
-	if err != nil {
-		s.logger.WithError(err).Error("failed to marshal response to command")
-		return
-	}
-
-	err = s.sendSlackResponse(command.ResponseURL, message)
-	if err != nil {
-		s.logger.WithError(err).Error("failed to reply to command")
-		return
-	}
+	return list
 }
 
-func (s *service) determineTriggeredAction(command SlashCommand) (Action, error) {
+func (s *service) HandleMessageEvent(ctx context.Context, sevent *slackevents.MessageEvent) {
+
+	if !strInStrSlice(sevent.Channel, s.channels) {
+		return
+	}
+
+	if !strings.HasPrefix(sevent.Text, s.config.SlackPrefix) {
+		return
+	}
+
+	// Split up the text of the Event into a slice
+	// Example: !esi status = []string{"!esi", "status"}
+	// Example: !esi types 32 = []string{"!esi", "types", "32"}
+	// Example: !esi issues = []string{"!esi", "issues"}
+	// Example: !esi status --location=china = []string{"!esi", "status", "--location=china"}
+	text := strings.Split(sevent.Text, " ")
+	// If text contains just the bot prefix, then we should reply with help.
+	if len(text) == 1 {
+		s.makeHelpMessage(Event{
+			origin:  sevent,
+			trigger: text[0],
+		})
+		return
+	}
+	// At this stage with have a slice that has a length >= 2, with the first entry still being the bot prefix
+	// This is predictable because we checked to see if the message started with the prefix earlier and have since then only split the text into a slice on spaces
+	// Now we want to drop the prefix. It no longer serves a purpose
+	text = text[1:]
+
+	// The command that is to be invoked should have a single word trigger and that trigger should now be at index 0 of the text slice.
+	// Lets use the string at index 0 to determine which command is being invoked.
+	// If missing is true, that means that the text at index 0 of the text slice did prompt any of the trigger funcs to return true
+	// We do not know which command is being trigger, return the help prompt with a small message stating that we could not match the request
+	// to a known command
+	invokedCommand, missing := s.determineInvokedCommand(text[0])
+	if missing {
+		s.makeHelpMessage(Event{
+			origin: sevent,
+			meta: map[string]interface{}{
+				"unknown": true,
+			},
+		})
+		return
+	}
+	// Construct Internal Event to hold trigger, args, and flags
+	event := Event{
+		origin:  sevent,
+		trigger: text[0],
+	}
+
+	// Determine if the rest of the text is long enough to be an arg or flag
+	if len(text[1:]) >= 1 {
+		// Treat remain pieces as args until we can parse them into flags
+		for _, arg := range text[1:] {
+			if strings.HasPrefix(arg, "--") {
+				arg = strings.TrimPrefix(arg, "--")
+				slFlag := strings.Split(arg, "=")
+				if len(slFlag) != 2 {
+					continue
+				}
+
+				event.flags[slFlag[0]] = slFlag[1]
+				continue
+			}
+
+			// If the arg does not start with a --, then treat it as an actual arguement.
+			// The invoked command will be able to deal with these if they want to
+			event.args = append(event.args, arg)
+		}
+	}
+
+	// We now have the invoked command. Here we call that command. Our job as the entry point is done
+	// The invoke command will either error out, send a message with the requested message to slack or it
+	// will send a message with an error message to slack assisting the user with sending the correct input
+	invokedCommand.Action(event)
+
+}
+
+func (s *service) determineInvokedCommand(command string) (*Command, bool) {
 
 	var triggered *Command
 
 	for _, com := range s.flat {
 
-		if com.Strict && strSliceContainsString(com.Triggers, command.Text) {
-			triggered = &com
-			break
-		}
-		if !com.Strict && strings.HasPrefix(command.Text, com.Prefix) {
+		if com.TriggerFunc(com, command) {
 			triggered = &com
 			break
 		}
 	}
-	if triggered == nil {
-		return nil, errCommandUndetermined
-	}
-
-	if len(triggered.Args) == 0 || len(command.Args) == 0 {
-		return triggered.Action, nil
-	}
-
-	for comArgKey, comArgVal := range command.Args {
-		if _, ok := triggered.Args[comArgKey]; !ok {
-			return nil, errCommandWithInvalidArgs
-		}
-		isValidValue := false
-		for _, trigVal := range triggered.Args[comArgKey] {
-			if trigVal == comArgVal {
-				isValidValue = true
-				break
-			}
-		}
-		if triggered.StrictArgs && !isValidValue {
-			return nil, errCommandWithInvalidArgValue
-		}
-	}
-
-	return triggered.Action, nil
+	return triggered, triggered == nil
 
 }
 
-func (s *service) sendSlackResponse(url string, data []byte) error {
-	resp, err := http.Post(url, "application/json", bytes.NewBuffer(data))
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	rdata, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return err
-	}
-	if resp.StatusCode != 200 {
-		fmt.Println(string(rdata), string(data))
-		return fmt.Errorf("received error attempting to response to slack command: %d, %s", resp.StatusCode, string(rdata))
-	}
-
-	return nil
-}
-
-func strSliceContainsString(haystack []string, needle string) bool {
+// Takes a str and a slice of str and tell you if the str is in the slice
+func strInStrSlice(needle string, haystack []string) bool {
 	for _, v := range haystack {
 		if needle == v {
 			return true
