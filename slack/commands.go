@@ -1,6 +1,7 @@
 package slack
 
 import (
+	"regexp"
 	"strings"
 
 	"github.com/sirkon/go-format"
@@ -397,6 +398,27 @@ func (s *service) BuildCommands() []Category {
 						})
 					},
 					Action: s.makeESIDynamicRequestMessage,
+					example: func(c Command) string {
+						return format.Formatm("${prefix} ${trigger}", format.Values{
+							"prefix":  s.config.SlackPrefix,
+							"trigger": "/latest/universe/types",
+						})
+					},
+				},
+				Command{
+					Description: "Any string begining with a `#` followed an integer will trigger a look up of that issue on Github",
+					TriggerFunc: func(c Command, s string) bool {
+						re, _ := regexp.Compile("^#[0-9]+")
+						return re.Match([]byte(s))
+					},
+					HelpTextFunc: func(c Command) string {
+						return format.Formatm("${trigger}\n\t\t${description} (i.e. ${example})\n", format.Values{
+							"trigger":     "#[0-9]",
+							"description": c.Description,
+							"example":     c.example(c),
+						})
+					},
+					Action: s.makeGHIssueMessage,
 					example: func(c Command) string {
 						return format.Formatm("${prefix} ${trigger}", format.Values{
 							"prefix":  s.config.SlackPrefix,

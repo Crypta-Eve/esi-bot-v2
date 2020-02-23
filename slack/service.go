@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/eveisesi/eb2"
+	"github.com/google/go-github/v29/github"
 	nslack "github.com/nlopes/slack"
 	"github.com/nlopes/slack/slackevents"
 	"github.com/sirupsen/logrus"
@@ -21,6 +22,7 @@ type service struct {
 	flat     []Command
 	channels []string
 	goslack  *nslack.Client
+	gogithub *github.Client
 }
 
 var (
@@ -31,11 +33,11 @@ var (
 func New(logger *logrus.Logger, config *eb2.Config) Service {
 
 	s := &service{
-
 		logger:   logger,
 		config:   config,
 		channels: strings.Split(config.SlackAllowedChannels, ","),
 		goslack:  nslack.New(config.SlackAPIToken),
+		gogithub: github.NewClient(nil),
 	}
 
 	commands := s.BuildCommands()
