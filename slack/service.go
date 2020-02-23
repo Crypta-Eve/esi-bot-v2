@@ -58,12 +58,12 @@ func New(logger *logrus.Logger, config *eb2.Config) Service {
 		}
 	}
 
-	go func(channel string, text string) {
-		for _, c := range s.channels {
+	go func(channels []string, text string) {
+		for _, c := range channels {
 			_, _, _ = s.goslack.PostMessage(c, nslack.MsgOptionText(getStartupMessage(), false))
 			time.Sleep(time.Millisecond * 500)
 		}
-	}(s.channels[0], getStartupMessage())
+	}(s.channels, getStartupMessage())
 
 	return s
 
