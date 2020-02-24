@@ -96,7 +96,7 @@ func (s *service) makeESIDynamicRequestMessage(event Event) {
 
 	data = dst.Bytes()
 
-	if len(data) > 1010 {
+	if len(data) > 1024000 {
 		endtext := []byte("\nand more ...")
 		data = data[:1010]
 		data = append(data, endtext...)
