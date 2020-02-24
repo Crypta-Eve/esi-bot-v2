@@ -3,6 +3,7 @@ module github.com/eveisesi/eb2
 go 1.13
 
 require (
+	github.com/dustin/go-humanize v1.0.0
 	github.com/go-chi/chi v4.0.3+incompatible
 	github.com/google/go-github/v29 v29.0.3
 	github.com/kelseyhightower/envconfig v1.4.0

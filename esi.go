@@ -10,7 +10,7 @@ type ESIStatus struct {
 }
 
 type ServerStatus struct {
-	Players       uint      `json:"players"`
+	Players       int64     `json:"players"`
 	ServerVersion string    `json:"server_version"`
 	StartTime     time.Time `json:"start_time"`
 	Vip           bool      `json:"vip"`

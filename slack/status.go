@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/dustin/go-humanize"
 	"github.com/eveisesi/eb2"
 	nslack "github.com/nlopes/slack"
 	"github.com/patrickmn/go-cache"
@@ -107,7 +108,7 @@ func (s *service) makeEveServerStatusMessage(event Event) {
 		Fields: []nslack.AttachmentField{
 			nslack.AttachmentField{
 				Title: "Players Online",
-				Value: fmt.Sprintf("%d", status.Players),
+				Value: fmt.Sprintf("%s", humanize.Comma(status.Players)),
 			},
 			nslack.AttachmentField{
 				Title: "Started At",
