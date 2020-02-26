@@ -276,8 +276,10 @@ func (s *service) MakeESIStatusMessage(channelID string, routes []*eb2.ESIStatus
 		})
 	}
 
+	msg := fmt.Sprintf("Psst.....Checkout <#%s> for a continuous feed of statuses from me...", s.config.SlackESIStatusChannel)
+
 	s.logger.Info("Responding to request for esi route status.")
-	channel, timestamp, err := s.goslack.PostMessage(channelID, nslack.MsgOptionAttachments(attachments...))
+	channel, timestamp, err := s.goslack.PostMessage(channelID, nslack.MsgOptionText(msg, false), nslack.MsgOptionAttachments(attachments...))
 	if err != nil {
 		s.logger.WithError(err).Error("failed to respond to request for esi route status.")
 		return
@@ -288,7 +290,6 @@ func (s *service) MakeESIStatusMessage(channelID string, routes []*eb2.ESIStatus
 	}).Info("successfully responded to request for esi route status.")
 
 }
-
 func checkCache(version string) ([]*eb2.ESIStatus, bool) {
 	check, found := statusCache.Get(version)
 	if found {
