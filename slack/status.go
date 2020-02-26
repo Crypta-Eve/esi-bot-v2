@@ -276,10 +276,15 @@ func (s *service) MakeESIStatusMessage(channelID string, routes []*eb2.ESIStatus
 		})
 	}
 
-	msg := fmt.Sprintf("Psst.....Checkout <#%s> for a continuous feed of statuses from me...", s.config.SlackESIStatusChannel)
+	options := []nslack.MsgOption{}
+	options = append(options, nslack.MsgOptionAttachments(attachments...))
+	if channelID != s.config.SlackESIStatusChannel {
+		msg := fmt.Sprintf("Psst.....Checkout <#%s> for a continuous feed of statuses from me...", s.config.SlackESIStatusChannel)
+		options = append(options, nslack.MsgOptionText(msg, false))
+	}
 
 	s.logger.Info("Responding to request for esi route status.")
-	channel, timestamp, err := s.goslack.PostMessage(channelID, nslack.MsgOptionText(msg, false), nslack.MsgOptionAttachments(attachments...))
+	channel, timestamp, err := s.goslack.PostMessage(channelID, options...)
 	if err != nil {
 		s.logger.WithError(err).Error("failed to respond to request for esi route status.")
 		return
