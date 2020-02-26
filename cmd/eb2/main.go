@@ -59,7 +59,7 @@ func main() {
 
 		logger.Info("non-nil routes received. Forwarding back to Slack Service to ping status channel")
 
-		slackServ.MakeESIStatusMessage(cfg.SlackESIStatusChannel, routes)
+		slackServ.MakeESIStatusMessage(cfg.SlackESIStatusChannel, routes, "latest")
 
 	})
 	if err != nil {

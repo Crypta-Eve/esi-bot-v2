@@ -226,11 +226,17 @@ func (s *service) handleESIStatusMessage(event Event) {
 
 	}
 
-	s.MakeESIStatusMessage(event.origin.Channel, routes)
+	s.MakeESIStatusMessage(event.origin.Channel, routes, version)
 
 }
 
-func (s *service) MakeESIStatusMessage(channelID string, routes []*eb2.ESIStatus) {
+func (s *service) MakeESIStatusMessage(channelID string, routes []*eb2.ESIStatus, version string) {
+
+	var etag string
+	etagCheck, found := etagCache.Get(version)
+	if found {
+		etag = etagCheck.(string)
+	}
 
 	var attachments []nslack.Attachment
 	for _, category := range categories {
@@ -275,6 +281,10 @@ func (s *service) MakeESIStatusMessage(channelID string, routes []*eb2.ESIStatus
 			Text: ":ok_hand:",
 		})
 	}
+
+	attachments = append(attachments, nslack.Attachment{
+		Text: fmt.Sprintf("Current Etag: %s\n", etag),
+	})
 
 	options := []nslack.MsgOption{}
 	options = append(options, nslack.MsgOptionAttachments(attachments...))

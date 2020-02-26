@@ -15,7 +15,7 @@ import (
 type Service interface {
 	HandleMessageEvent(context.Context, *slackevents.MessageEvent)
 	FetchRouteStatuses(version string) (routes []*eb2.ESIStatus, err error)
-	MakeESIStatusMessage(channel string, routes []*eb2.ESIStatus)
+	MakeESIStatusMessage(channel string, routes []*eb2.ESIStatus, version string)
 }
 
 type service struct {
