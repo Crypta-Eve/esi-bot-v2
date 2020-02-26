@@ -349,7 +349,7 @@ func (s *service) BuildCommands() []Category {
 							"meta", "legacy", "dev", "latest",
 						},
 					},
-					Action:   s.makeESIStatusMessage,
+					Action:   s.handleESIStatusMessage,
 					triggers: []string{"status"},
 					example: func(c Command) string {
 						return format.Formatm("${prefix} ${trigger}", format.Values{

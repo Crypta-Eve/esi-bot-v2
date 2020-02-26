@@ -12,6 +12,7 @@ import (
 	"github.com/eveisesi/eb2/server"
 	"github.com/eveisesi/eb2/slack"
 	"github.com/kelseyhightower/envconfig"
+	gocron "github.com/robfig/cron/v3"
 	"github.com/sirupsen/logrus"
 )
 
@@ -41,6 +42,31 @@ func main() {
 	slackServ := slack.New(logger, &cfg)
 
 	server := server.NewServer(&cfg, logger, slackServ)
+
+	cron := gocron.New()
+	_, err = cron.AddFunc("*/2 * * * *", func() {
+
+		routes, err := slackServ.FetchRouteStatuses("latest")
+		if err != nil {
+			logger.WithError(err).Error("error return from esi status func")
+			return
+		}
+
+		if routes == nil {
+			logger.Info("Route Status return nil. Returning and waiting for next run")
+			return
+		}
+
+		logger.Info("non-nil routes received. Forwarding back to Slack Service to ping status channel")
+
+		slackServ.MakeESIStatusMessage(cfg.SlackESIStatusChannel, routes)
+
+	})
+	if err != nil {
+		logger.WithError(err).Fatal("failed to configure go cron")
+	}
+
+	cron.Start()
 
 	errChan := make(chan error, 1)
 

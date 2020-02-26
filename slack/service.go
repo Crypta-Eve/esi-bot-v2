@@ -14,6 +14,8 @@ import (
 
 type Service interface {
 	HandleMessageEvent(context.Context, *slackevents.MessageEvent)
+	FetchRouteStatuses(version string) (routes []*eb2.ESIStatus, err error)
+	MakeESIStatusMessage(channel string, routes []*eb2.ESIStatus)
 }
 
 type service struct {
@@ -46,7 +48,7 @@ func New(logger *logrus.Logger, config *eb2.Config) Service {
 	s.commands = commands
 	s.flat = s.flattenCommands(commands)
 
-	routes, err := fetchRouteStatuses("latest")
+	routes, err := s.FetchRouteStatuses("latest")
 	if err != nil {
 		logger.WithError(err).Fatal("failed to load esi route status")
 	}

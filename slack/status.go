@@ -35,7 +35,8 @@ var categories = []StatusCategory{
 	},
 }
 
-var statusCache = cache.New(time.Minute*1, time.Second*30)
+var statusCache = cache.New(cache.NoExpiration, cache.NoExpiration)
+var etagCache = cache.New(cache.NoExpiration, cache.NoExpiration)
 
 func (s *service) makeEveServerStatusMessage(event Event) {
 
@@ -108,7 +109,7 @@ func (s *service) makeEveServerStatusMessage(event Event) {
 		Fields: []nslack.AttachmentField{
 			nslack.AttachmentField{
 				Title: "Players Online",
-				Value: fmt.Sprintf("%s", humanize.Comma(status.Players)),
+				Value: humanize.Comma(status.Players),
 			},
 			nslack.AttachmentField{
 				Title: "Started At",
@@ -143,7 +144,7 @@ func determineServerRunTime(from time.Time) string {
 
 }
 
-func fetchRouteStatuses(version string) (routes []*eb2.ESIStatus, err error) {
+func (s *service) FetchRouteStatuses(version string) (routes []*eb2.ESIStatus, err error) {
 
 	uri, _ := url.Parse(eb2.ESI_BASE)
 	uri.Path = "status.json"
@@ -153,11 +154,37 @@ func fetchRouteStatuses(version string) (routes []*eb2.ESIStatus, err error) {
 
 	uri.RawQuery = query.Encode()
 
-	resp, err := http.Get(uri.String())
+	req, err := http.NewRequest(http.MethodGet, uri.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+	var currentEtag string
+	etag, found := etagCache.Get(version)
+	if found {
+		currentEtag = etag.(string)
+	}
+
+	if currentEtag != "" {
+		req.Header.Set("If-None-Match", currentEtag)
+	}
+
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
+
+	if resp.StatusCode >= 400 {
+		return nil, fmt.Errorf("unable to fetch route status. esi api responsed with an HTTP Status Code of %d", resp.StatusCode)
+	}
+
+	if resp.StatusCode == 304 {
+		return nil, nil
+	}
+
+	if resp.StatusCode != 200 {
+		return nil, fmt.Errorf("unable expected status code returned. %d", resp.StatusCode)
+	}
 
 	data, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
@@ -169,14 +196,17 @@ func fetchRouteStatuses(version string) (routes []*eb2.ESIStatus, err error) {
 		return nil, err
 	}
 
+	statusCache.Flush()
 	statusCache.Set(version, routes, 0)
+
+	etagCache.Flush()
+	etagCache.Set(version, resp.Header.Get("Etag"), 0)
 
 	return
 
 }
 
-func (s *service) makeESIStatusMessage(event Event) {
-
+func (s *service) handleESIStatusMessage(event Event) {
 	version := "latest"
 	if _, ok := event.flags["version"]; ok {
 		version = event.flags["version"]
@@ -185,7 +215,7 @@ func (s *service) makeESIStatusMessage(event Event) {
 	routes, found := checkCache(version)
 	if !found {
 
-		routes, err := fetchRouteStatuses(version)
+		routes, err := s.FetchRouteStatuses(version)
 		if err != nil {
 			_, _, _ = s.goslack.PostMessage(event.origin.Channel, nslack.MsgOptionText(err.Error(), true))
 			return
@@ -195,6 +225,12 @@ func (s *service) makeESIStatusMessage(event Event) {
 		statusCache.Set(version, routes, 0)
 
 	}
+
+	s.MakeESIStatusMessage(event.origin.Channel, routes)
+
+}
+
+func (s *service) MakeESIStatusMessage(channelID string, routes []*eb2.ESIStatus) {
 
 	var attachments []nslack.Attachment
 	for _, category := range categories {
@@ -241,7 +277,7 @@ func (s *service) makeESIStatusMessage(event Event) {
 	}
 
 	s.logger.Info("Responding to request for esi route status.")
-	channel, timestamp, err := s.goslack.PostMessage(event.origin.Channel, nslack.MsgOptionAttachments(attachments...))
+	channel, timestamp, err := s.goslack.PostMessage(channelID, nslack.MsgOptionAttachments(attachments...))
 	if err != nil {
 		s.logger.WithError(err).Error("failed to respond to request for esi route status.")
 		return
