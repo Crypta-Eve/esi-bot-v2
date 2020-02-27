@@ -7,6 +7,7 @@ type Config struct {
 	SlackPrefix          string `envconfig:"SLACK_PREFIX" required:"true"`
 
 	SlackESIStatusChannel string `envconfig:"SLACK_ESISTATUS_CHANNEL" required:"true"`
+	SlackSendStartupMsg   bool   `envconfig:"SLACK_SEND_STARTUP_MSG" default:"true"`
 
 	ApiPort uint `envconfig:"API_PORT" default:"5000"`
 

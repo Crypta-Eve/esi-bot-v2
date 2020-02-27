@@ -164,15 +164,22 @@ func (s *service) FetchRouteStatuses(version string) (routes []*eb2.ESIStatus, e
 		currentEtag = etag.(string)
 	}
 
+	s.logger.WithField("current_etag", currentEtag).Debug()
+
 	if currentEtag != "" {
 		req.Header.Set("If-None-Match", currentEtag)
+
 	}
+
+	s.logger.WithField("headers", req.Header).Debug("Request Headers")
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
+
+	s.logger.WithField("status_code", resp.StatusCode).Print()
 
 	if resp.StatusCode >= 400 {
 		return nil, fmt.Errorf("unable to fetch route status. esi api responsed with an HTTP Status Code of %d", resp.StatusCode)
@@ -198,6 +205,8 @@ func (s *service) FetchRouteStatuses(version string) (routes []*eb2.ESIStatus, e
 
 	statusCache.Flush()
 	statusCache.Set(version, routes, 0)
+
+	s.logger.WithField("headers", resp.Header).Debug("Response Headers")
 
 	etagCache.Flush()
 	etagCache.Set(version, resp.Header.Get("Etag"), 0)
@@ -248,7 +257,6 @@ func (s *service) MakeESIStatusMessage(channelID string, routes []*eb2.ESIStatus
 		}
 
 		if len(categoryRoutes) > 0 {
-
 			attachment := nslack.Attachment{
 				Color: category.Color,
 				Fallback: fmt.Sprintf(
@@ -274,7 +282,6 @@ func (s *service) MakeESIStatusMessage(channelID string, routes []*eb2.ESIStatus
 			}
 			attachments = append(attachments, attachment)
 		}
-
 	}
 	if len(attachments) == 0 {
 		attachments = append(attachments, nslack.Attachment{
@@ -282,9 +289,7 @@ func (s *service) MakeESIStatusMessage(channelID string, routes []*eb2.ESIStatus
 		})
 	}
 
-	attachments = append(attachments, nslack.Attachment{
-		Text: fmt.Sprintf("Current Etag: %s\n", etag),
-	})
+	attachments[len(attachments)-1].Footer = fmt.Sprintf("Etag: %s\n", etag)
 
 	options := []nslack.MsgOption{}
 	options = append(options, nslack.MsgOptionAttachments(attachments...))
