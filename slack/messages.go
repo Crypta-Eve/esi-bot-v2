@@ -29,7 +29,7 @@ var startup = []string{
 	"look more like?",
 	"I'm just here for the memes",
 	":frogsiren: someone kicked me :frogsiren:",
-	"Christy Cloud 4 CSM"
+	"Christy Cloud 4 CSM",
 }
 
 func getStartupMessage() string {
