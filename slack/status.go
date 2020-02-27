@@ -322,7 +322,7 @@ func percentage(top int, bottom int) float64 {
 	if bottom == 0 {
 		return 0.00
 	}
-	return 1 - ((float64(top) / float64(bottom)) * 100)
+	return ((float64(top) / float64(bottom)) * 100)
 }
 
 func generateRoutesString(routes []*eb2.ESIStatus) string {
