@@ -25,7 +25,7 @@ func (s *service) makeLinkMessage(event Event) {
 			),
 		)
 	case "source", "repo":
-		text = fmt.Sprintf("I'm an open source bot. If you want to contribute or you're curious how I work, my source is available for you to browse here: %s", eb2.SOURCE)
+		text = fmt.Sprintf("I'm an open source bot. If you want to contribute or you're curious how I work, my source is available for you to browse here: %s\nIf you want to talk about the bot with the developer, visit the <#%s> slack channel", eb2.SOURCE, s.config.SlackESIBotV2Channel)
 	case "faq":
 		text = fmt.Sprintf("%s/docs/FAQ", eb2.ESI_DOCS)
 	case "issues":
