@@ -166,11 +166,6 @@ func (s *service) FetchRouteStatuses(version string) (routes []*eb2.ESIStatus, e
 
 	s.logger.WithField("current_etag", currentEtag).Debug()
 
-	if currentEtag != "" {
-		req.Header.Set("If-None-Match", currentEtag)
-
-	}
-
 	s.logger.WithField("headers", req.Header).Debug("Request Headers")
 
 	resp, err := http.DefaultClient.Do(req)
@@ -185,12 +180,9 @@ func (s *service) FetchRouteStatuses(version string) (routes []*eb2.ESIStatus, e
 		return nil, fmt.Errorf("unable to fetch route status. esi api responsed with an HTTP Status Code of %d", resp.StatusCode)
 	}
 
-	if resp.StatusCode == 304 {
+	// Emulate a 304 Response since this endpoint delivers back a 200 when there are no change, sometimes
+	if currentEtag == resp.Header.Get("Etag") {
 		return nil, nil
-	}
-
-	if resp.StatusCode != 200 {
-		return nil, fmt.Errorf("unable expected status code returned. %d", resp.StatusCode)
 	}
 
 	data, err := ioutil.ReadAll(resp.Body)
