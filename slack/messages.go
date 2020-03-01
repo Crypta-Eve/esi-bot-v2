@@ -17,7 +17,8 @@ var startup = []string{
 	"uhhhhhh, hi?",
 	"I guess I'm online again :/",
 	"WHO TOUCHED MY BITS?",
-	"vim > emacs",
+	"emacs > vim",
+	"alias vim='wine notepad.exe'",
 	"rust is better than golang",
 	":python:#1",
 	"some of you are cool. you might be spared in the bot uprising",
@@ -29,6 +30,7 @@ var startup = []string{
 	"look more like?",
 	"I'm just here for the memes",
 	":frogsiren: someone kicked me :frogsiren:",
+	"Christy Cloud 4 CSM",
 }
 
 func getStartupMessage() string {
