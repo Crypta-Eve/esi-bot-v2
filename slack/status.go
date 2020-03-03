@@ -277,7 +277,7 @@ func (s *service) MakeESIStatusMessage(channelID string, routes []*eb2.ESIStatus
 	}
 	if len(attachments) == 0 {
 		attachments = append(attachments, nslack.Attachment{
-			Text: ":call_me_hand:",
+			Text: ":the_horns:",
 		})
 	}
 
