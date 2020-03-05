@@ -61,14 +61,14 @@ func (s *service) makeHelpMessage(event Event) {
 	}
 
 	s.logger.Info("Responding to request for help (ephemeral)")
-	timestamp, err := s.goslack.PostEphemeral(event.origin.Channel, event.origin.User, nslack.MsgOptionText(text, false))
+	channel, timestamp, err := s.goslack.PostMessage(event.origin.User, nslack.MsgOptionText(text, false))
 	if err != nil {
 		s.logger.WithError(err).Error("failed to respond to request for help (ephemeral).")
 		return
 	}
 	s.logger.WithFields(logrus.Fields{
 		"user":      event.origin.User,
-		"channel":   event.origin.Channel,
+		"channel":   channel,
 		"timestamp": timestamp,
 	}).Info("successfully responded with request for help (ephemeral).")
 
