@@ -38,9 +38,17 @@ var categories = []StatusCategory{
 var statusCache = cache.New(cache.NoExpiration, cache.NoExpiration)
 var etagCache = cache.New(cache.NoExpiration, cache.NoExpiration)
 
-func (s *service) makeEveServerStatusMessage(event Event) {
+func (s *service) handleEveTQStatus(event Event) {
+	s.makeEveServerStatusMessage(event, eb2.ESI_BASE)
+}
 
-	uri, _ := url.Parse(eb2.ESI_BASE)
+func (s *service) handleEveSerenityStatus(event Event) {
+	s.makeEveServerStatusMessage(event, eb2.ESI_CHINA)
+}
+
+func (s *service) makeEveServerStatusMessage(event Event, base string) {
+
+	uri, _ := url.Parse(base)
 	uri.Path = "/v1/status"
 
 	resp, err := http.Get(uri.String())

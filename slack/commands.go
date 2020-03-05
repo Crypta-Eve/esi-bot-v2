@@ -412,8 +412,29 @@ func (s *service) BuildCommands() []Category {
 							"example":     c.example(c),
 						})
 					},
-					Action:   s.makeEveServerStatusMessage,
+					Action:   s.handleEveTQStatus,
 					triggers: []string{"tq", "tranquility"},
+					example: func(c Command) string {
+						return format.Formatm("${prefix} ${trigger}", format.Values{
+							"prefix":  s.config.SlackPrefix,
+							"trigger": c.triggers[getUnsignedRandomIntWithMax(len(c.triggers)-1)],
+						})
+					},
+				},
+				Command{
+					Description: "Check the uptime and player count of the Serenity Eve Servers",
+					TriggerFunc: func(c Command, s string) bool {
+						return strInStrSlice(s, c.triggers)
+					},
+					HelpTextFunc: func(c Command) string {
+						return format.Formatm("${trigger}\n\t\t${description} (i.e. ${example})\n", format.Values{
+							"trigger":     strings.Join(c.triggers, ", "),
+							"description": c.Description,
+							"example":     c.example(c),
+						})
+					},
+					Action:   s.handleEveSerenityStatus,
+					triggers: []string{"serenity", "china"},
 					example: func(c Command) string {
 						return format.Formatm("${prefix} ${trigger}", format.Values{
 							"prefix":  s.config.SlackPrefix,
