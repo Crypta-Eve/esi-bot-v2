@@ -257,6 +257,27 @@ func (s *service) BuildCommands() []Category {
 						})
 					},
 				},
+				Command{
+					Description: "Responds with a link to the ESI API Diff",
+					TriggerFunc: func(c Command, s string) bool {
+						return strInStrSlice(s, c.triggers)
+					},
+					Action: s.makeLinkMessage,
+					HelpTextFunc: func(c Command) string {
+						return format.Formatm("${trigger}\n\t\t${description} (i.e. ${example})\n", format.Values{
+							"trigger":     strings.Join(c.triggers, ", "),
+							"description": c.Description,
+							"example":     c.example(c),
+						})
+					},
+					triggers: []string{"diff", "diffs"},
+					example: func(c Command) string {
+						return format.Formatm("${prefix} ${trigger}", format.Values{
+							"prefix":  s.config.SlackPrefix,
+							"trigger": c.triggers[getUnsignedRandomIntWithMax(len(c.triggers)-1)],
+						})
+					},
+				},
 			},
 		},
 		Category{
