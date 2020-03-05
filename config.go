@@ -6,7 +6,6 @@ type Config struct {
 	SlackAllowedChannels string `envconfig:"SLACK_ALLOWED_CHANNELS" required:"true"`
 	SlackPrefix          string `envconfig:"SLACK_PREFIX" required:"true"`
 
-	SlackESIBotV2Channel  string `envconfig:"SLACK_ESIBOTV2_CHANNEL" required:"true"`
 	SlackESIStatusChannel string `envconfig:"SLACK_ESISTATUS_CHANNEL" required:"true"`
 	SlackSendStartupMsg   bool   `envconfig:"SLACK_SEND_STARTUP_MSG" default:"true"`
 
