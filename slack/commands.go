@@ -1,11 +1,14 @@
 package slack
 
 import (
+	"fmt"
 	"regexp"
 	"strings"
 
 	"github.com/sirkon/go-format"
+	"github.com/sirupsen/logrus"
 
+	nslack "github.com/nlopes/slack"
 	"github.com/nlopes/slack/slackevents"
 )
 
@@ -90,6 +93,43 @@ func (s *service) BuildCommands() []Category {
 						})
 					},
 					triggers: []string{"help"},
+					example: func(c Command) string {
+						return format.Formatm("${prefix} ${trigger}", format.Values{
+							"prefix":  s.config.SlackPrefix,
+							"trigger": c.triggers[getUnsignedRandomIntWithMax(len(c.triggers)-1)],
+						})
+					},
+				},
+				Command{
+					Description: "Get the current version of the application",
+					TriggerFunc: func(c Command, s string) bool {
+						return s == "version"
+					},
+					Action: func(event Event) {
+
+						text := fmt.Sprintf("Current Version: %s", s.config.AppVersion)
+
+						s.logger.Info("Responding to request for help (ephemeral)")
+						channel, timestamp, err := s.goslack.PostMessage(event.origin.Channel, nslack.MsgOptionText(text, false))
+						if err != nil {
+							s.logger.WithError(err).Error("failed to respond to request for help (ephemeral).")
+							return
+						}
+						s.logger.WithFields(logrus.Fields{
+							"user":      event.origin.User,
+							"channel":   channel,
+							"timestamp": timestamp,
+						}).Info("successfully responded with request for help (ephemeral).")
+
+					},
+					HelpTextFunc: func(c Command) string {
+						return format.Formatm("${trigger}\n\t\t${description} (i.e. ${example})\n", format.Values{
+							"trigger":     strings.Join(c.triggers, ", "),
+							"description": c.Description,
+							"example":     c.example(c),
+						})
+					},
+					triggers: []string{"version"},
 					example: func(c Command) string {
 						return format.Formatm("${prefix} ${trigger}", format.Values{
 							"prefix":  s.config.SlackPrefix,

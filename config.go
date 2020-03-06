@@ -11,5 +11,7 @@ type Config struct {
 
 	ApiPort uint `envconfig:"API_PORT" default:"5000"`
 
+	AppVersion string `envconfig:"APP_VERSION" required:"true"`
+
 	LogLevel string `envconfig:"LOG_LEVEL" default:"info"`
 }
