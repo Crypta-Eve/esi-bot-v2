@@ -449,6 +449,27 @@ func (s *service) BuildCommands() []Category {
 			Description: "Commands that allow you to make requests to supported external APIs including ESI",
 			Commands: []Command{
 				Command{
+					Description: "Use this command to easily call out to /universe/types/:id",
+					TriggerFunc: func(c Command, s string) bool {
+						return strInStrSlice(s, c.triggers)
+					},
+					HelpTextFunc: func(c Command) string {
+						return format.Formatm("${trigger}\n\t\t${description} (i.e. ${example})\n", format.Values{
+							"trigger":     strings.Join(c.triggers, ", "),
+							"description": c.Description,
+							"example":     c.example(c),
+						})
+					},
+					Action:   s.makeESITypeRequestMessage,
+					triggers: []string{"item", "item_id", "type", "type_id"},
+					example: func(c Command) string {
+						return format.Formatm("${prefix} ${trigger}", format.Values{
+							"prefix":  s.config.SlackPrefix,
+							"trigger": c.triggers[getUnsignedRandomIntWithMax(len(c.triggers)-1)],
+						})
+					},
+				},
+				Command{
 					Description: "Any string begining with a `/` followed by a valid version number will trigger a request to ESI",
 					TriggerFunc: func(c Command, s string) bool {
 						return strings.HasPrefix(s, "/")

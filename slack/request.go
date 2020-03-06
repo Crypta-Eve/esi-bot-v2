@@ -3,6 +3,7 @@ package slack
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -14,6 +15,18 @@ import (
 	nslack "github.com/nlopes/slack"
 	"github.com/sirupsen/logrus"
 )
+
+func (s *service) makeESITypeRequestMessage(event Event) {
+
+	if len(event.args) != 1 {
+		err := errors.New("this command excepts a single argument, which should be the id of the item you are need details for")
+		// TODO: Return Parsing Error
+		_, _, _ = s.goslack.PostMessage(event.origin.Channel, nslack.MsgOptionText(err.Error(), false))
+	}
+
+	event.trigger = fmt.Sprintf("/latest/universe/types/%s", event.args[0])
+	s.makeESIDynamicRequestMessage(event)
+}
 
 func (s *service) makeESIDynamicRequestMessage(event Event) {
 
@@ -148,7 +161,7 @@ func validateRoute(route string) (string, bool) {
 
 			if route[i] == parsedCommand[i] {
 				if i == len(route)-1 {
-					// We are at the end of the route and everything has match,
+					// We are at the end of the route and everything has matched,
 					//  lets exit with the selected route
 					validRoute = true
 					goto Exit
