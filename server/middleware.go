@@ -2,14 +2,22 @@ package server
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/go-chi/chi/middleware"
 	"github.com/sirupsen/logrus"
+)
+
+type contextKey int
+
+const (
+	tokenKey contextKey = iota
 )
 
 // Cors Middleware to Allow for Frontend Consumption of the API
@@ -26,6 +34,28 @@ func Cors(next http.Handler) http.Handler {
 		}
 
 		next.ServeHTTP(w, r)
+	})
+}
+
+func (s *Server) CheckJWT(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+
+		authHeader := r.Header.Get("Authorization")
+		if len(authHeader) < 7 || strings.ToLower(authHeader[0:6]) != "bearer" {
+			s.WriteError(ctx, w, nil, http.StatusUnauthorized)
+			return
+		}
+
+		tokenStr := strings.TrimPrefix(authHeader, "Bearer ")
+		parsed, err := s.Token.ParseAndValidateToken(tokenStr)
+		if err != nil {
+			s.WriteError(ctx, w, err, http.StatusUnauthorized)
+			return
+		}
+
+		ctx = context.WithValue(ctx, tokenKey, parsed)
+		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
 

@@ -9,23 +9,29 @@ import (
 
 	"github.com/eveisesi/eb2"
 	"github.com/eveisesi/eb2/slack"
+	"github.com/eveisesi/eb2/token"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
+	nslack "github.com/nlopes/slack"
 	"github.com/sirupsen/logrus"
 )
 
 type Server struct {
-	server *http.Server
-	Config *eb2.Config
-	Logger *logrus.Logger
-	Slack  slack.Service
+	server  *http.Server
+	Config  *eb2.Config
+	Logger  *logrus.Logger
+	Slack   slack.Service
+	Token   token.Service
+	goslack *nslack.Client
 }
 
-func NewServer(config *eb2.Config, logger *logrus.Logger, slack slack.Service) *Server {
+func NewServer(config *eb2.Config, logger *logrus.Logger, slack slack.Service, token token.Service) *Server {
 	return &Server{
-		Config: config,
-		Logger: logger,
-		Slack:  slack,
+		Config:  config,
+		Logger:  logger,
+		Slack:   slack,
+		Token:   token,
+		goslack: nslack.New(config.SlackAPIToken),
 	}
 }
 
@@ -55,6 +61,10 @@ func (s *Server) BuildRouter() http.Handler {
 
 	r.Get("/slack/invite", s.handleGetSlackInvite)
 	r.Post("/slack/invite", s.handlePostSlackInvite)
+	r.Group(func(r chi.Router) {
+		r.Use(s.CheckJWT)
+		r.Post("/slack/invite/send", s.handlePostSlackInviteSend)
+	})
 	r.Post("/slack", s.handlePostSlack)
 
 	return r

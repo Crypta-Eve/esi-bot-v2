@@ -4,11 +4,15 @@ import (
 	"bytes"
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 	"sync"
 	"time"
+
+	"github.com/dgrijalva/jwt-go"
+	nslack "github.com/nlopes/slack"
 
 	"github.com/eveisesi/eb2/tools"
 	"github.com/nlopes/slack/slackevents"
@@ -91,18 +95,12 @@ func (s *Server) handleGetSlackInvite(w http.ResponseWriter, r *http.Request) {
 
 	var ctx = r.Context()
 
-	callbackUri := r.URL.Query().Get("callbackUri")
-	if callbackUri == "" {
-		s.WriteError(ctx, w, errors.New("must provide a callback uri"), http.StatusBadRequest)
-		return
-	}
-
 	state := tools.RandomString(16)
 	stateMap.Set(state, true, 0)
 
 	query := url.Values{}
 	query.Set("response_type", "code")
-	query.Set("redirect_uri", callbackUri)
+	query.Set("redirect_uri", s.Config.EveCallback)
 	query.Set("client_id", s.Config.EveClientID)
 	query.Set("state", state)
 
@@ -166,12 +164,6 @@ func (s *Server) handlePostSlackInvite(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// data, err := ioutil.ReadAll(resp.Body)
-	// if err != nil {
-	// 	s.WriteError(ctx, w, errors.Wrap(err, "unable to parse response from ccp"), http.StatusInternalServerError)
-	// 	return
-	// }
-
 	var data map[string]interface{}
 	err = json.NewDecoder(resp.Body).Decode(&data)
 	if err != nil {
@@ -180,6 +172,79 @@ func (s *Server) handlePostSlackInvite(w http.ResponseWriter, r *http.Request) {
 	}
 
 	s.WriteSuccess(ctx, w, data, http.StatusOK)
+
+}
+
+type SlackInviteSend struct {
+	Email string `json:"email"`
+}
+
+type SlackInvitePayload struct {
+	Token    string `json:"token"`
+	Email    string `json:"email"`
+	RealName string `json:"real_name"`
+}
+
+type SlackInviteResponse struct {
+	Ok    bool   `json:"ok"`
+	Error string `json:"error,omitempty"`
+}
+
+func (s *Server) handlePostSlackInviteSend(w http.ResponseWriter, r *http.Request) {
+
+	var ctx = r.Context()
+
+	var body SlackInviteSend
+	err := json.NewDecoder(r.Body).Decode(&body)
+	if err != nil {
+		s.WriteError(ctx, w, errors.Wrap(err, "unable to decode request body"), http.StatusBadRequest)
+		return
+	}
+
+	check := ctx.Value(tokenKey)
+	if check == nil {
+		s.WriteError(ctx, w, errors.New("token not found"), http.StatusInternalServerError)
+		return
+	}
+
+	token := check.(*jwt.Token)
+
+	endpoint := "https://slack.com/api/users.admin.invite"
+
+	realName := token.Claims.(jwt.MapClaims)["name"].(string)
+
+	uri := url.Values{}
+	uri.Set("token", s.Config.SlackLegacyAPIToken)
+	uri.Set("email", body.Email)
+	uri.Set("real_name", realName)
+
+	resp, err := http.PostForm(endpoint, uri)
+	if err != nil {
+		s.WriteError(ctx, w, err, http.StatusInternalServerError)
+		return
+	}
+
+	var slackResp = &SlackInviteResponse{}
+	err = json.NewDecoder(resp.Body).Decode(slackResp)
+	if err != nil {
+		s.WriteError(ctx, w, errors.Wrap(err, "unable to decode response from slack"), http.StatusInternalServerError)
+		return
+	}
+
+	status := http.StatusOK
+
+	switch slackResp.Ok {
+	case true:
+		go s.goslack.PostMessage(s.Config.SlackModChannel, nslack.MsgOptionText(fmt.Sprintf("I've successfully invited %s (%s) to TF Slack.", realName, body.Email), false))
+	case false:
+		status = http.StatusBadRequest
+		go s.goslack.PostMessage(s.Config.SlackModChannel, nslack.MsgOptionText(fmt.Sprintf("Uh Oh, I'm having issues inviting %s (%s) to TF Slack. Slack Response Dump: %s", realName, body.Email, slackResp.Error), false))
+	}
+
+	data, err := json.Marshal(slackResp)
+
+	w.WriteHeader(status)
+	w.Write(data)
 
 }
 

@@ -7,9 +7,12 @@ type Config struct {
 	SlackPrefix           string `envconfig:"SLACK_PREFIX" required:"true"`
 	SlackESIStatusChannel string `envconfig:"SLACK_ESISTATUS_CHANNEL" required:"true"`
 	SlackSendStartupMsg   bool   `envconfig:"SLACK_SEND_STARTUP_MSG" default:"true"`
+	SlackLegacyAPIToken   string `envconfig:"SLACK_LEGACY_API_TOKEN" required:"true"`
+	SlackModChannel       string `envconfig:"SLACK_MOD_CHANNEL" required:"true"`
 
 	EveClientID     string `envconfig:"EVE_CLIENT_ID" required:"true"`
 	EveClientSecret string `envconfig:"EVE_CLIENT_SECRET" required:"true"`
+	EveCallback     string `envconfig:"EVE_CALLBACK" required:"true"`
 
 	ApiPort uint `envconfig:"API_PORT" default:"5000"`
 
