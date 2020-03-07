@@ -2,6 +2,7 @@ package slack
 
 import (
 	"context"
+	"net/http"
 	"strings"
 	"time"
 
@@ -26,6 +27,7 @@ type service struct {
 	channels []string
 	goslack  *nslack.Client
 	gogithub *github.Client
+	client   *http.Client
 }
 
 var (
@@ -41,6 +43,9 @@ func New(logger *logrus.Logger, config *eb2.Config) Service {
 		channels: strings.Split(config.SlackAllowedChannels, ","),
 		goslack:  nslack.New(config.SlackAPIToken),
 		gogithub: github.NewClient(nil),
+		client: &http.Client{
+			Timeout: time.Second * 30,
+		},
 	}
 
 	commands := s.BuildCommands()
