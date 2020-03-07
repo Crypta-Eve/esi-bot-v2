@@ -13,6 +13,7 @@ import (
 
 	"github.com/dgrijalva/jwt-go"
 	nslack "github.com/nlopes/slack"
+	"github.com/sirupsen/logrus"
 
 	"github.com/eveisesi/eb2/tools"
 	"github.com/nlopes/slack/slackevents"
@@ -235,10 +236,26 @@ func (s *Server) handlePostSlackInviteSend(w http.ResponseWriter, r *http.Reques
 
 	switch slackResp.Ok {
 	case true:
-		go s.goslack.PostMessage(s.Config.SlackModChannel, nslack.MsgOptionText(fmt.Sprintf("I've successfully invited %s (%s) to TF Slack.", realName, body.Email), false))
+		msg := fmt.Sprintf("I've successfully invited %s (%s) to TF Slack.", realName, body.Email)
+		channel, timestamp, err := s.goslack.PostMessage(s.Config.SlackModChannel, nslack.MsgOptionText(msg, false))
+		if err != nil {
+			s.Logger.WithError(err).WithFields(logrus.Fields{
+				"channel":   channel,
+				"timestamp": timestamp,
+				"message":   msg,
+			}).Error("failed to post success message to mod chat.")
+		}
 	case false:
 		status = http.StatusBadRequest
-		go s.goslack.PostMessage(s.Config.SlackModChannel, nslack.MsgOptionText(fmt.Sprintf("Uh Oh, I'm having issues inviting %s (%s) to TF Slack. Slack Response Dump: %s", realName, body.Email, slackResp.Error), false))
+		msg := fmt.Sprintf("Uh Oh, I'm having issues inviting %s (%s) to TF Slack. Slack Response Dump: %s", realName, body.Email, slackResp.Error)
+		channel, timestamp, err := s.goslack.PostMessage(s.Config.SlackModChannel, nslack.MsgOptionText(msg, false))
+		if err != nil {
+			s.Logger.WithError(err).WithFields(logrus.Fields{
+				"channel":   channel,
+				"timestamp": timestamp,
+				"message":   msg,
+			}).Error("failed to post message to mod chat.")
+		}
 	}
 
 	data, err := json.Marshal(slackResp)
