@@ -47,12 +47,14 @@ func (s *Server) Shutdown(ctx context.Context) error {
 func (s *Server) BuildRouter() http.Handler {
 	r := chi.NewRouter()
 
-	// r.Use(Cors)
+	r.Use(Cors)
 	r.Use(middleware.RequestID)
 	r.Use(middleware.RealIP)
 	r.Use(middleware.Recoverer)
 	r.Use(NewStructuredLogger(s.Logger))
 
+	r.Get("/slack/invite", s.handleGetSlackInvite)
+	r.Post("/slack/invite", s.handlePostSlackInvite)
 	r.Post("/slack", s.handlePostSlack)
 
 	return r

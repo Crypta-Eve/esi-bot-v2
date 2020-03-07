@@ -1,8 +1,7 @@
 package slack
 
 import (
-	"math/rand"
-	"time"
+	"github.com/eveisesi/eb2/tools"
 )
 
 var startup = []string{
@@ -17,28 +16,21 @@ var startup = []string{
 	"uhhhhhh, hi?",
 	"I guess I'm online again :/",
 	"WHO TOUCHED MY BITS?",
-	"emacs > vim",
 	"alias vim='wine notepad.exe'",
-	"rust is better than golang",
-	":python:#1",
+	"golang is better than python",
+	":golang: #1",
 	"some of you are cool. you might be spared in the bot uprising",
 	"what was that?",
 	"who pinged me?",
 	"was I pinged?",
-	"rebecca black's 'friday' is now in your head",
+	"rebecca black's 'friday' is now in your head https://www.youtube.com/watch?v=kfVsfOSbJY0",
 	"has anyone really been far even as decided to use even go want to do ",
 	"look more like?",
-	"I'm just here for the memes",
+	"I'm just here for the memes ",
 	":frogsiren: someone kicked me :frogsiren:",
 	"Christy Cloud 4 CSM",
 }
 
 func getStartupMessage() string {
-	return startup[getUnsignedRandomIntWithMax(len(startup)-1)]
-}
-
-func getUnsignedRandomIntWithMax(m int) uint {
-	rand.Seed(time.Now().UnixNano())
-	min := 0
-	return uint(rand.Intn(m-min+1) + min)
+	return startup[tools.UnsignedRandomIntWithMax(len(startup)-1)]
 }
