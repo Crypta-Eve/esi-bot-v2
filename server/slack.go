@@ -29,7 +29,7 @@ func (s *Server) handlePostSlack(w http.ResponseWriter, r *http.Request) {
 
 	err := verifySlackReqeust(r, s.Config.SlackSigningSecret)
 	if err != nil {
-		s.WriteError(ctx, w, err, http.StatusInternalServerError)
+		s.WriteError(ctx, w, err, http.StatusBadRequest)
 		return
 	}
 
@@ -61,7 +61,6 @@ func (s *Server) handlePostSlack(w http.ResponseWriter, r *http.Request) {
 
 	go func(event slackevents.EventsAPIEvent) {
 		// Delay for dramatic effect
-		time.Sleep(time.Millisecond * 500)
 		switch e := event.InnerEvent.Data.(type) {
 		case *slackevents.MessageEvent:
 			s.Slack.HandleMessageEvent(ctx, e)

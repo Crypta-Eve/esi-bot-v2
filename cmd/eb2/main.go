@@ -13,6 +13,7 @@ import (
 	"github.com/eveisesi/eb2/slack"
 	"github.com/eveisesi/eb2/token"
 	"github.com/kelseyhightower/envconfig"
+	gocron "github.com/robfig/cron/v3"
 	"github.com/sirupsen/logrus"
 )
 
@@ -45,30 +46,30 @@ func main() {
 
 	server := server.NewServer(&cfg, logger, slackServ, tokenServ)
 
-	// cron := gocron.New()
-	// _, err = cron.AddFunc("*/2 * * * *", func() {
+	cron := gocron.New()
+	_, err = cron.AddFunc("*/2 * * * *", func() {
 
-	// 	routes, err := slackServ.FetchRouteStatuses("latest")
-	// 	if err != nil {
-	// 		logger.WithError(err).Error("error return from esi status func")
-	// 		return
-	// 	}
+		routes, err := slackServ.FetchRouteStatuses("latest")
+		if err != nil {
+			logger.WithError(err).Error("error return from esi status func")
+			return
+		}
 
-	// 	if routes == nil {
-	// 		logger.Info("Route Status return nil. Returning and waiting for next run")
-	// 		return
-	// 	}
+		if routes == nil {
+			logger.Info("Route Status return nil. Returning and waiting for next run")
+			return
+		}
 
-	// 	logger.Info("non-nil routes received. Forwarding back to Slack Service to ping status channel")
+		logger.Info("non-nil routes received. Forwarding back to Slack Service to ping status channel")
 
-	// 	slackServ.MakeESIStatusMessage(cfg.SlackESIStatusChannel, routes, "latest")
+		slackServ.MakeESIStatusMessage(cfg.SlackESIStatusChannel, routes, "latest")
 
-	// })
-	// if err != nil {
-	// 	logger.WithError(err).Fatal("failed to configure go cron")
-	// }
+	})
+	if err != nil {
+		logger.WithError(err).Fatal("failed to configure go cron")
+	}
 
-	// cron.Start()
+	cron.Start()
 
 	errChan := make(chan error, 1)
 
