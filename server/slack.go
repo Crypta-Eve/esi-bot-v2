@@ -8,7 +8,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
-	"sync"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
@@ -73,7 +72,6 @@ func (s *Server) handlePostSlack(w http.ResponseWriter, r *http.Request) {
 
 var (
 	stateMap = cache.New(time.Minute*5, time.Minute*5)
-	mux      sync.Mutex
 )
 
 type (

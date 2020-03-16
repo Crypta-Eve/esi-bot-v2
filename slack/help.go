@@ -24,18 +24,19 @@ func (s *service) makeHelpMessage(event Event) {
 
 	for i, category := range s.commands {
 
-		blob = append(blob, fmt.Sprintf("%s - (%s):\n", category.Name, category.Description))
-
+		blob = append(blob, fmt.Sprintf("*%s - (%s)*:\n", category.Name, category.Description))
+		blob = append(blob, "```")
 		for _, command := range category.Commands {
-			blob = append(blob, fmt.Sprintf("\t%s", command.HelpTextFunc(command)))
+			blob = append(blob, fmt.Sprintf("%s", command.HelpTextFunc(command)))
 		}
+		blob = append(blob, "```")
 
 		if i != catLen-1 {
-			blob = append(blob, "\n")
+			blob = append(blob, "\n\n")
 		}
 
 	}
-	text := fmt.Sprintf("```%s```", strings.Join(blob, ""))
+	text := strings.Join(blob, "")
 
 	if unknown, ok := event.meta["unknown"].(bool); ok {
 		if unknown {
