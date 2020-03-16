@@ -87,7 +87,7 @@ func (s *service) BuildCommands() []Category {
 					},
 					Action: s.makeHelpMessage,
 					HelpTextFunc: func(c Command) string {
-						return format.Formatm("${trigger}\n\t\t${description} (i.e. ${example})\n", format.Values{
+						return format.Formatm("${trigger}\n\t${description} (i.e. ${example})\n", format.Values{
 							"trigger":     strings.Join(c.triggers, ", "),
 							"description": c.Description,
 							"example":     c.example(c),
@@ -124,7 +124,7 @@ func (s *service) BuildCommands() []Category {
 
 					},
 					HelpTextFunc: func(c Command) string {
-						return format.Formatm("${trigger}\n\t\t${description} (i.e. ${example})\n", format.Values{
+						return format.Formatm("${trigger}\n\t${description} (i.e. ${example})\n", format.Values{
 							"trigger":     strings.Join(c.triggers, ", "),
 							"description": c.Description,
 							"example":     c.example(c),
@@ -151,7 +151,7 @@ func (s *service) BuildCommands() []Category {
 					},
 					Action: s.makeGreeting,
 					HelpTextFunc: func(c Command) string {
-						return format.Formatm("${trigger}\n\t\t${description} (i.e. ${example})\n", format.Values{
+						return format.Formatm("${trigger}\n\t${description} (i.e. ${example})\n", format.Values{
 							"trigger":     strings.Join(c.triggers, ", "),
 							"description": c.Description,
 							"example":     c.example(c),
@@ -178,7 +178,7 @@ func (s *service) BuildCommands() []Category {
 					},
 					Action: s.makeLinkMessage,
 					HelpTextFunc: func(c Command) string {
-						return format.Formatm("${trigger}\n\t\t${description} (i.e. ${example})\n", format.Values{
+						return format.Formatm("${trigger}\n\t${description} (i.e. ${example})\n", format.Values{
 							"trigger":     strings.Join(c.triggers, ", "),
 							"description": c.Description,
 							"example":     c.example(c),
@@ -199,7 +199,7 @@ func (s *service) BuildCommands() []Category {
 					},
 					Action: s.makeLinkMessage,
 					HelpTextFunc: func(c Command) string {
-						return format.Formatm("${trigger}\n\t\t${description} (i.e. ${example})\n", format.Values{
+						return format.Formatm("${trigger}\n\t${description} (i.e. ${example})\n", format.Values{
 							"trigger":     strings.Join(c.triggers, ", "),
 							"description": c.Description,
 							"example":     c.example(c),
@@ -221,7 +221,7 @@ func (s *service) BuildCommands() []Category {
 					},
 					Action: s.makeLinkMessage,
 					HelpTextFunc: func(c Command) string {
-						return format.Formatm("${trigger}\n\t\t${description} (i.e. ${example})\n", format.Values{
+						return format.Formatm("${trigger}\n\t${description} (i.e. ${example})\n", format.Values{
 							"trigger":     strings.Join(c.triggers, ", "),
 							"description": c.Description,
 							"example":     c.example(c),
@@ -242,7 +242,7 @@ func (s *service) BuildCommands() []Category {
 					},
 					Action: s.makeLinkMessage,
 					HelpTextFunc: func(c Command) string {
-						return format.Formatm("${trigger}\n\t\t${description} (i.e. ${example})\n", format.Values{
+						return format.Formatm("${trigger}\n\t${description} (i.e. ${example})\n", format.Values{
 							"trigger":     strings.Join(c.triggers, ", "),
 							"description": c.Description,
 							"example":     c.example(c),
@@ -263,7 +263,7 @@ func (s *service) BuildCommands() []Category {
 					},
 					Action: s.makeLinkMessage,
 					HelpTextFunc: func(c Command) string {
-						return format.Formatm("${trigger}\n\t\t${description} (i.e. ${example})\n", format.Values{
+						return format.Formatm("${trigger}\n\t${description} (i.e. ${example})\n", format.Values{
 							"trigger":     strings.Join(c.triggers, ", "),
 							"description": c.Description,
 							"example":     c.example(c),
@@ -284,7 +284,7 @@ func (s *service) BuildCommands() []Category {
 					},
 					Action: s.makeLinkMessage,
 					HelpTextFunc: func(c Command) string {
-						return format.Formatm("${trigger}\n\t\t${description} (i.e. ${example})\n", format.Values{
+						return format.Formatm("${trigger}\n\t${description} (i.e. ${example})\n", format.Values{
 							"trigger":     strings.Join(c.triggers, ", "),
 							"description": c.Description,
 							"example":     c.example(c),
@@ -305,7 +305,7 @@ func (s *service) BuildCommands() []Category {
 					},
 					Action: s.makeLinkMessage,
 					HelpTextFunc: func(c Command) string {
-						return format.Formatm("${trigger}\n\t\t${description} (i.e. ${example})\n", format.Values{
+						return format.Formatm("${trigger}\n\t${description} (i.e. ${example})\n", format.Values{
 							"trigger":     strings.Join(c.triggers, ", "),
 							"description": c.Description,
 							"example":     c.example(c),
@@ -332,7 +332,7 @@ func (s *service) BuildCommands() []Category {
 					},
 					triggers: []string{"new"},
 					HelpTextFunc: func(c Command) string {
-						return format.Formatm("${trigger}\n\t\t${description} (i.e. ${example})\n", format.Values{
+						return format.Formatm("${trigger}\n\t${description} (i.e. ${example})\n", format.Values{
 							"trigger":     strings.Join(c.triggers, ", "),
 							"description": c.Description,
 							"example":     c.example(c),
@@ -353,7 +353,7 @@ func (s *service) BuildCommands() []Category {
 					},
 					triggers: []string{"br", "bug"},
 					HelpTextFunc: func(c Command) string {
-						return format.Formatm("${trigger}\n\t\t${description} (i.e. ${example})\n", format.Values{
+						return format.Formatm("${trigger}\n\t${description} (i.e. ${example})\n", format.Values{
 							"trigger":     strings.Join(c.triggers, ", "),
 							"description": c.Description,
 							"example":     c.example(c),
@@ -374,7 +374,7 @@ func (s *service) BuildCommands() []Category {
 					},
 					triggers: []string{"fr", "feature", "enhancement"},
 					HelpTextFunc: func(c Command) string {
-						return format.Formatm("${trigger}\n\t\t${description} (i.e. ${example})\n", format.Values{
+						return format.Formatm("${trigger}\n\t${description} (i.e. ${example})\n", format.Values{
 							"trigger":     strings.Join(c.triggers, ", "),
 							"description": c.Description,
 							"example":     c.example(c),
@@ -395,7 +395,7 @@ func (s *service) BuildCommands() []Category {
 					},
 					triggers: []string{"incon", "inconsistency"},
 					HelpTextFunc: func(c Command) string {
-						return format.Formatm("${trigger}\n\t\t${description} (i.e. ${example})\n", format.Values{
+						return format.Formatm("${trigger}\n\t${description} (i.e. ${example})\n", format.Values{
 							"trigger":     strings.Join(c.triggers, ", "),
 							"description": c.Description,
 							"example":     c.example(c),
@@ -421,7 +421,7 @@ func (s *service) BuildCommands() []Category {
 						return strInStrSlice(s, c.triggers)
 					},
 					HelpTextFunc: func(c Command) string {
-						return format.Formatm("${trigger}\n\t\t${description} (i.e. ${example})\n", format.Values{
+						return format.Formatm("${trigger}\n\t${description} (i.e. ${example})\n", format.Values{
 							"trigger":     strings.Join(c.triggers, ", "),
 							"description": c.Description,
 							"example":     c.example(c),
@@ -447,7 +447,7 @@ func (s *service) BuildCommands() []Category {
 						return strInStrSlice(s, c.triggers)
 					},
 					HelpTextFunc: func(c Command) string {
-						return format.Formatm("${trigger}\n\t\t${description} (i.e. ${example})\n", format.Values{
+						return format.Formatm("${trigger}\n\t${description} (i.e. ${example})\n", format.Values{
 							"trigger":     strings.Join(c.triggers, ", "),
 							"description": c.Description,
 							"example":     c.example(c),
@@ -468,7 +468,7 @@ func (s *service) BuildCommands() []Category {
 						return strInStrSlice(s, c.triggers)
 					},
 					HelpTextFunc: func(c Command) string {
-						return format.Formatm("${trigger}\n\t\t${description} (i.e. ${example})\n", format.Values{
+						return format.Formatm("${trigger}\n\t${description} (i.e. ${example})\n", format.Values{
 							"trigger":     strings.Join(c.triggers, ", "),
 							"description": c.Description,
 							"example":     c.example(c),
@@ -495,7 +495,7 @@ func (s *service) BuildCommands() []Category {
 						return strInStrSlice(s, c.triggers)
 					},
 					HelpTextFunc: func(c Command) string {
-						return format.Formatm("${trigger}\n\t\t${description} (i.e. ${example})\n", format.Values{
+						return format.Formatm("${trigger}\n\t${description} (i.e. ${example})\n", format.Values{
 							"trigger":     strings.Join(c.triggers, ", "),
 							"description": c.Description,
 							"example":     c.example(c),
@@ -516,7 +516,7 @@ func (s *service) BuildCommands() []Category {
 						return strings.HasPrefix(s, "/")
 					},
 					HelpTextFunc: func(c Command) string {
-						return format.Formatm("${trigger}\n\t\t${description} (i.e. ${example})\n", format.Values{
+						return format.Formatm("${trigger}\n\t${description} (i.e. ${example})\n", format.Values{
 							"trigger":     "/{latest, legacy, dev, v1, v2, v3, v4, v5, v6}/...",
 							"description": c.Description,
 							"example":     c.example(c),
@@ -537,7 +537,7 @@ func (s *service) BuildCommands() []Category {
 						return re.Match([]byte(s))
 					},
 					HelpTextFunc: func(c Command) string {
-						return format.Formatm("${trigger}\n\t\t${description} (i.e. ${example})\n", format.Values{
+						return format.Formatm("${trigger}\n\t${description} (i.e. ${example})\n", format.Values{
 							"trigger":     "#[0-9]",
 							"description": c.Description,
 							"example":     c.example(c),
