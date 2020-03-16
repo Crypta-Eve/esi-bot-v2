@@ -279,6 +279,7 @@ func (s *service) MakeESIStatusMessage(channelID string, routes []*eb2.ESIStatus
 					category.Emoji,
 					generateRoutesString(categoryRoutes),
 				),
+				Pretext: time.Now().Format("2006-01-02 15:04:05"),
 			}
 			attachments = append(attachments, attachment)
 		}
