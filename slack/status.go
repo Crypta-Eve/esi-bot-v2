@@ -279,7 +279,6 @@ func (s *service) MakeESIStatusMessage(channelID string, routes []*eb2.ESIStatus
 					category.Emoji,
 					generateRoutesString(categoryRoutes),
 				),
-				Pretext: time.Now().Format("2006-01-02 15:04:05"),
 			}
 			attachments = append(attachments, attachment)
 		}
@@ -289,7 +288,8 @@ func (s *service) MakeESIStatusMessage(channelID string, routes []*eb2.ESIStatus
 			Text: ":the_horns:",
 		})
 	}
-
+	now := time.Now()
+	attachments[0].Pretext = fmt.Sprintf("<!date^%d^{date_num} {time_secs}|%s>", now.Unix(), now.Format("2006-01-02 15:04:05"))
 	attachments[len(attachments)-1].Footer = fmt.Sprintf("Etag: %s\n", etag)
 
 	options := []nslack.MsgOption{}
