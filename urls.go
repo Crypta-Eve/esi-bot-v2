@@ -1,6 +1,6 @@
 package eb2
 
-const SOURCE = "https://github.com/ddouglas/esi-bot-v2"
+const SOURCE = "https://github.com/eveisesi/esi-bot-v2"
 const ESI_BASE = "https://esi.evetech.net"
 const ESI_CHINA = "https://esi.evepc.163.com"
 const ESI_DOCS = "https://docs.esi.evetech.net"
