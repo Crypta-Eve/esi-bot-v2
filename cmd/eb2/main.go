@@ -12,6 +12,7 @@ import (
 	"github.com/eveisesi/eb2/server"
 	"github.com/eveisesi/eb2/slack"
 	"github.com/eveisesi/eb2/token"
+	"github.com/joho/godotenv"
 	"github.com/kelseyhightower/envconfig"
 	gocron "github.com/robfig/cron/v3"
 	"github.com/sirupsen/logrus"
@@ -99,5 +100,7 @@ func main() {
 }
 
 func getEnvConfig() error {
+	_ = godotenv.Load(".env")
+
 	return envconfig.Process("", &cfg)
 }
