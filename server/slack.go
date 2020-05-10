@@ -199,6 +199,14 @@ func (s *Server) handlePostSlackInviteSend(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
+	if body.Email == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(SlackInviteResponse{
+			Ok:    false,
+			Error: "email_invalid: please supply a valid, non-empty email address",
+		})
+	}
+
 	check := ctx.Value(tokenKey)
 	if check == nil {
 		s.WriteError(ctx, w, errors.New("token not found"), http.StatusInternalServerError)
