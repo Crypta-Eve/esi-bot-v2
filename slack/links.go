@@ -18,7 +18,10 @@ func (s *service) makeLinkMessage(event Event) {
 	case "id", "ids", "ranges":
 		text = fmt.Sprintf(
 			"ID Ranges References: \n\t\t%s\nAsset `location_id` reference:\n\t\t%s",
-			eb2.ID_RANGES,
+			fmt.Sprintf(
+				"%s/docs/id_ranges",
+				eb2.ESI_DOCS,
+			),
 			fmt.Sprintf(
 				"%s/docs/asset_location_id",
 				eb2.ESI_DOCS,
