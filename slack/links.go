@@ -39,6 +39,8 @@ func (s *service) makeLinkMessage(event Event) {
 		text = fmt.Sprintf("%s/ui", eb2.ESI_BASE)
 	case "diff", "diffs":
 		text = fmt.Sprintf("%s/diff/latest/dev", eb2.ESI_BASE)
+	case "ask":
+		text = fmt.Sprintf("I have been summoned to ask you to read this important link if you want any further help! %s", eb2.ASK_TO_ASK)
 	}
 
 	s.logger.Info("Responding to a request for a link")
