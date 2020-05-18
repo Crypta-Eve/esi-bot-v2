@@ -15,7 +15,7 @@ var header = nslack.Attachment{
 
 var br = nslack.Attachment{
 	Title: "Report a New Bug",
-	Text:  fmt.Sprintf("• unexpected 500 responses\n• incorrect information in the swagger spec\n• otherwise invalid or unexpected responses"),
+	Text:  "• unexpected 500 responses\n• incorrect information in the swagger spec\n• otherwise invalid or unexpected responses",
 	Color: "danger",
 	Actions: []nslack.AttachmentAction{
 		nslack.AttachmentAction{

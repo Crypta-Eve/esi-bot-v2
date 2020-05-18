@@ -10,10 +10,3 @@ services:
         hostname: bot
         env_file:
             - .env
-    ui:
-        image: docker.pkg.github.com/eveisesi/tf-slack-invite/tf-slack-invite:0.1.2
-        restart: always
-        container_name: tf-slack-invite
-        hostname: tf-slack-invite
-        ports:
-            - "5000:80"

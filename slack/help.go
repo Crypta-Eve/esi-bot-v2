@@ -27,7 +27,7 @@ func (s *service) makeHelpMessage(event Event) {
 		blob = append(blob, fmt.Sprintf("*%s - (%s)*:\n", category.Name, category.Description))
 		blob = append(blob, "```")
 		for _, command := range category.Commands {
-			blob = append(blob, fmt.Sprintf("%s", command.HelpTextFunc(command)))
+			blob = append(blob, command.HelpTextFunc(command))
 		}
 		blob = append(blob, "```")
 
