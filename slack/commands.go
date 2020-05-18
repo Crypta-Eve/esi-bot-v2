@@ -214,7 +214,7 @@ func (s *service) BuildCommands() []Category {
 					},
 				},
 				Command{
-					Description: "Links to documnetation of various id ranges that one will encounter while using ESI",
+					Description: "Links to documentation of various id ranges that one will encounter while using ESI",
 					TriggerFunc: func(c Command, s string) bool {
 						return strInStrSlice(s, c.triggers)
 
