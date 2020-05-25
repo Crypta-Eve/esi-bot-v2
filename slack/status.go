@@ -311,6 +311,7 @@ func (s *service) MakeESIStatusMessage(channelID string, routes []*eb2.ESIStatus
 	}).Info("successfully responded to request for esi route status.")
 
 }
+
 func checkCache(version string) ([]*eb2.ESIStatus, bool) {
 	check, found := statusCache.Get(version)
 	if found {

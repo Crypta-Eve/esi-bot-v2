@@ -73,10 +73,10 @@ var wg sync.WaitGroup
 
 func (s *service) makeESITypeRequestMessage(event Event) {
 	if len(event.args) == 0 {
-		s.goslack.PostMessage(event.origin.Channel, nslack.MsgOptionText("You need to supply at least one type id to lookup", false))
+		_, _, _ = s.goslack.PostMessage(event.origin.Channel, nslack.MsgOptionText("You need to supply at least one type id to lookup", false))
 		return
 	} else if len(event.args) > 10 {
-		s.goslack.PostMessage(event.origin.Channel, nslack.MsgOptionText("Please supply a maximum of 10 ids to look up", false))
+		_, _, _ = s.goslack.PostMessage(event.origin.Channel, nslack.MsgOptionText("Please supply a maximum of 10 ids to look up", false))
 		return
 	}
 

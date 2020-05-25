@@ -96,7 +96,7 @@ func (s *service) BuildCommands() []Category {
 					triggers: []string{"help"},
 					example: func(c Command) string {
 						return format.Formatm("${prefix} ${trigger}", format.Values{
-							"prefix":  s.config.SlackPrefix,
+							"prefix":  s.config.SlackPrefixes[tools.UnsignedRandomIntWithMax(len(s.config.SlackPrefixes)-1)],
 							"trigger": c.triggers[tools.UnsignedRandomIntWithMax(len(c.triggers)-1)],
 						})
 					},
@@ -133,7 +133,7 @@ func (s *service) BuildCommands() []Category {
 					triggers: []string{"version"},
 					example: func(c Command) string {
 						return format.Formatm("${prefix} ${trigger}", format.Values{
-							"prefix":  s.config.SlackPrefix,
+							"prefix":  s.config.SlackPrefixes[tools.UnsignedRandomIntWithMax(len(s.config.SlackPrefixes)-1)],
 							"trigger": c.triggers[tools.UnsignedRandomIntWithMax(len(c.triggers)-1)],
 						})
 					},
@@ -160,7 +160,7 @@ func (s *service) BuildCommands() []Category {
 					triggers: []string{"hello", "hi", "hey", "o7", "o/", "7o", `\o`},
 					example: func(c Command) string {
 						return format.Formatm("${prefix} ${trigger}", format.Values{
-							"prefix":  s.config.SlackPrefix,
+							"prefix":  s.config.SlackPrefixes[tools.UnsignedRandomIntWithMax(len(s.config.SlackPrefixes)-1)],
 							"trigger": c.triggers[tools.UnsignedRandomIntWithMax(len(c.triggers)-1)],
 						})
 					},
@@ -187,7 +187,7 @@ func (s *service) BuildCommands() []Category {
 					triggers: []string{"issues"},
 					example: func(c Command) string {
 						return format.Formatm("${prefix} ${trigger}", format.Values{
-							"prefix":  s.config.SlackPrefix,
+							"prefix":  s.config.SlackPrefixes[tools.UnsignedRandomIntWithMax(len(s.config.SlackPrefixes)-1)],
 							"trigger": c.triggers[tools.UnsignedRandomIntWithMax(len(c.triggers)-1)],
 						})
 					},
@@ -208,7 +208,7 @@ func (s *service) BuildCommands() []Category {
 					triggers: []string{"sso"},
 					example: func(c Command) string {
 						return format.Formatm("${prefix} ${trigger}", format.Values{
-							"prefix":  s.config.SlackPrefix,
+							"prefix":  s.config.SlackPrefixes[tools.UnsignedRandomIntWithMax(len(s.config.SlackPrefixes)-1)],
 							"trigger": c.triggers[tools.UnsignedRandomIntWithMax(len(c.triggers)-1)],
 						})
 					},
@@ -230,7 +230,7 @@ func (s *service) BuildCommands() []Category {
 					triggers: []string{"id", "ids", "ranges"},
 					example: func(c Command) string {
 						return format.Formatm("${prefix} ${trigger}", format.Values{
-							"prefix":  s.config.SlackPrefix,
+							"prefix":  s.config.SlackPrefixes[tools.UnsignedRandomIntWithMax(len(s.config.SlackPrefixes)-1)],
 							"trigger": c.triggers[tools.UnsignedRandomIntWithMax(len(c.triggers)-1)],
 						})
 					},
@@ -251,7 +251,7 @@ func (s *service) BuildCommands() []Category {
 					triggers: []string{"source", "repo"},
 					example: func(c Command) string {
 						return format.Formatm("${prefix} ${trigger}", format.Values{
-							"prefix":  s.config.SlackPrefix,
+							"prefix":  s.config.SlackPrefixes[tools.UnsignedRandomIntWithMax(len(s.config.SlackPrefixes)-1)],
 							"trigger": c.triggers[tools.UnsignedRandomIntWithMax(len(c.triggers)-1)],
 						})
 					},
@@ -272,7 +272,7 @@ func (s *service) BuildCommands() []Category {
 					triggers: []string{"faq"},
 					example: func(c Command) string {
 						return format.Formatm("${prefix} ${trigger}", format.Values{
-							"prefix":  s.config.SlackPrefix,
+							"prefix":  s.config.SlackPrefixes[tools.UnsignedRandomIntWithMax(len(s.config.SlackPrefixes)-1)],
 							"trigger": c.triggers[tools.UnsignedRandomIntWithMax(len(c.triggers)-1)],
 						})
 					},
@@ -293,7 +293,7 @@ func (s *service) BuildCommands() []Category {
 					triggers: []string{"webui", "ui"},
 					example: func(c Command) string {
 						return format.Formatm("${prefix} ${trigger}", format.Values{
-							"prefix":  s.config.SlackPrefix,
+							"prefix":  s.config.SlackPrefixes[tools.UnsignedRandomIntWithMax(len(s.config.SlackPrefixes)-1)],
 							"trigger": c.triggers[tools.UnsignedRandomIntWithMax(len(c.triggers)-1)],
 						})
 					},
@@ -314,7 +314,7 @@ func (s *service) BuildCommands() []Category {
 					triggers: []string{"diff", "diffs"},
 					example: func(c Command) string {
 						return format.Formatm("${prefix} ${trigger}", format.Values{
-							"prefix":  s.config.SlackPrefix,
+							"prefix":  s.config.SlackPrefixes[tools.UnsignedRandomIntWithMax(len(s.config.SlackPrefixes)-1)],
 							"trigger": c.triggers[tools.UnsignedRandomIntWithMax(len(c.triggers)-1)],
 						})
 					},
@@ -335,7 +335,7 @@ func (s *service) BuildCommands() []Category {
 					triggers: []string{"ask"},
 					example: func(c Command) string {
 						return format.Formatm("${prefix} ${trigger}", format.Values{
-							"prefix":  s.config.SlackPrefix,
+							"prefix":  s.config.SlackPrefixes[tools.UnsignedRandomIntWithMax(len(s.config.SlackPrefixes)-1)],
 							"trigger": c.triggers[tools.UnsignedRandomIntWithMax(len(c.triggers)-1)],
 						})
 					},
@@ -362,7 +362,7 @@ func (s *service) BuildCommands() []Category {
 					Action: s.makeIssues,
 					example: func(c Command) string {
 						return format.Formatm("${prefix} ${trigger}", format.Values{
-							"prefix":  s.config.SlackPrefix,
+							"prefix":  s.config.SlackPrefixes[tools.UnsignedRandomIntWithMax(len(s.config.SlackPrefixes)-1)],
 							"trigger": c.triggers[tools.UnsignedRandomIntWithMax(len(c.triggers)-1)],
 						})
 					},
@@ -383,7 +383,7 @@ func (s *service) BuildCommands() []Category {
 					Action: s.makeIssues,
 					example: func(c Command) string {
 						return format.Formatm("${prefix} ${trigger}", format.Values{
-							"prefix":  s.config.SlackPrefix,
+							"prefix":  s.config.SlackPrefixes[tools.UnsignedRandomIntWithMax(len(s.config.SlackPrefixes)-1)],
 							"trigger": c.triggers[tools.UnsignedRandomIntWithMax(len(c.triggers)-1)],
 						})
 					},
@@ -404,7 +404,7 @@ func (s *service) BuildCommands() []Category {
 					Action: s.makeIssues,
 					example: func(c Command) string {
 						return format.Formatm("${prefix} ${trigger}", format.Values{
-							"prefix":  s.config.SlackPrefix,
+							"prefix":  s.config.SlackPrefixes[tools.UnsignedRandomIntWithMax(len(s.config.SlackPrefixes)-1)],
 							"trigger": c.triggers[tools.UnsignedRandomIntWithMax(len(c.triggers)-1)],
 						})
 					},
@@ -425,7 +425,7 @@ func (s *service) BuildCommands() []Category {
 					Action: s.makeIssues,
 					example: func(c Command) string {
 						return format.Formatm("${prefix} ${trigger}", format.Values{
-							"prefix":  s.config.SlackPrefix,
+							"prefix":  s.config.SlackPrefixes[tools.UnsignedRandomIntWithMax(len(s.config.SlackPrefixes)-1)],
 							"trigger": c.triggers[tools.UnsignedRandomIntWithMax(len(c.triggers)-1)],
 						})
 					},
@@ -457,7 +457,7 @@ func (s *service) BuildCommands() []Category {
 					triggers: []string{"status"},
 					example: func(c Command) string {
 						return format.Formatm("${prefix} ${trigger}", format.Values{
-							"prefix":  s.config.SlackPrefix,
+							"prefix":  s.config.SlackPrefixes[tools.UnsignedRandomIntWithMax(len(s.config.SlackPrefixes)-1)],
 							"trigger": c.triggers[tools.UnsignedRandomIntWithMax(len(c.triggers)-1)],
 						})
 					},
@@ -478,7 +478,7 @@ func (s *service) BuildCommands() []Category {
 					triggers: []string{"tq", "tranquility"},
 					example: func(c Command) string {
 						return format.Formatm("${prefix} ${trigger}", format.Values{
-							"prefix":  s.config.SlackPrefix,
+							"prefix":  s.config.SlackPrefixes[tools.UnsignedRandomIntWithMax(len(s.config.SlackPrefixes)-1)],
 							"trigger": c.triggers[tools.UnsignedRandomIntWithMax(len(c.triggers)-1)],
 						})
 					},
@@ -499,7 +499,7 @@ func (s *service) BuildCommands() []Category {
 					triggers: []string{"serenity", "china"},
 					example: func(c Command) string {
 						return format.Formatm("${prefix} ${trigger}", format.Values{
-							"prefix":  s.config.SlackPrefix,
+							"prefix":  s.config.SlackPrefixes[tools.UnsignedRandomIntWithMax(len(s.config.SlackPrefixes)-1)],
 							"trigger": c.triggers[tools.UnsignedRandomIntWithMax(len(c.triggers)-1)],
 						})
 					},
@@ -526,7 +526,7 @@ func (s *service) BuildCommands() []Category {
 					triggers: []string{"item", "item_id", "type", "type_id"},
 					example: func(c Command) string {
 						return format.Formatm("${prefix} ${trigger}", format.Values{
-							"prefix":  s.config.SlackPrefix,
+							"prefix":  s.config.SlackPrefixes[tools.UnsignedRandomIntWithMax(len(s.config.SlackPrefixes)-1)],
 							"trigger": c.triggers[tools.UnsignedRandomIntWithMax(len(c.triggers)-1)],
 						})
 					},
@@ -546,7 +546,7 @@ func (s *service) BuildCommands() []Category {
 					Action: s.makeESIDynamicRequestMessage,
 					example: func(c Command) string {
 						return format.Formatm("${prefix} ${trigger}", format.Values{
-							"prefix":  s.config.SlackPrefix,
+							"prefix":  s.config.SlackPrefixes[tools.UnsignedRandomIntWithMax(len(s.config.SlackPrefixes)-1)],
 							"trigger": "/latest/universe/types",
 						})
 					},
@@ -567,7 +567,7 @@ func (s *service) BuildCommands() []Category {
 					Action: s.makeGHIssueMessage,
 					example: func(c Command) string {
 						return format.Formatm("${prefix} ${trigger}", format.Values{
-							"prefix":  s.config.SlackPrefix,
+							"prefix":  s.config.SlackPrefixes[tools.UnsignedRandomIntWithMax(len(s.config.SlackPrefixes)-1)],
 							"trigger": "/latest/universe/types",
 						})
 					},

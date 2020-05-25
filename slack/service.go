@@ -24,7 +24,6 @@ type service struct {
 	config   *eb2.Config
 	commands []Category
 	flat     []Command
-	channels []string
 	goslack  *nslack.Client
 	gogithub *github.Client
 	client   *http.Client
@@ -40,7 +39,6 @@ func New(logger *logrus.Logger, config *eb2.Config) Service {
 	s := &service{
 		logger:   logger,
 		config:   config,
-		channels: strings.Split(config.SlackAllowedChannels, ","),
 		goslack:  nslack.New(config.SlackAPIToken),
 		gogithub: github.NewClient(nil),
 		client: &http.Client{
@@ -65,13 +63,13 @@ func New(logger *logrus.Logger, config *eb2.Config) Service {
 		}
 	}
 
-	if s.config.SlackSendStartupMsg {
+	if config.SlackSendStartupMsg {
 		go func(channels []string, text string) {
 			for _, c := range channels {
 				_, _, _ = s.goslack.PostMessage(c, nslack.MsgOptionText(getStartupMessage(), false))
-				time.Sleep(time.Millisecond * 500)
+				time.Sleep(time.Millisecond * 100)
 			}
-		}(s.channels, getStartupMessage())
+		}(config.SlackPingChannels, getStartupMessage())
 	}
 	return s
 
@@ -91,11 +89,15 @@ func (s *service) flattenCommands(commands []Category) []Command {
 
 func (s *service) HandleMessageEvent(ctx context.Context, sevent *slackevents.MessageEvent) {
 
-	if !strInStrSlice(sevent.Channel, s.channels) {
-		return
+	valid := false
+	for _, prefix := range s.config.SlackPrefixes {
+		if strings.HasPrefix(sevent.Text, prefix) {
+			valid = true
+			break
+		}
 	}
 
-	if !strings.HasPrefix(sevent.Text, s.config.SlackPrefix) {
+	if !valid {
 		return
 	}
 
