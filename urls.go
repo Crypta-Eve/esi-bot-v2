@@ -2,7 +2,7 @@ package eb2
 
 const SOURCE = "https://github.com/eveisesi/esi-bot-v2"
 const ESI_TRANQUILITY = "tranquility"
-const ESI_SERENITY = "china"
+const ESI_SERENITY = "serenity"
 
 var ESI_URLS = map[string]string{
 	ESI_TRANQUILITY: "https://esi.evetech.net",
