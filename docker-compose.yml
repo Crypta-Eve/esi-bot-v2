@@ -5,7 +5,7 @@ services:
         image: docker.pkg.github.com/eveisesi/esi-bot-v2/esi-bot:${DOCKER_VERSION}
         network_mode: "host"
         restart: on-failure
-        command: ./eb2
+        command: ./bot
         container_name: bot
         hostname: bot
         env_file:
