@@ -8,7 +8,7 @@ FROM alpine:latest AS release
 WORKDIR /app/logs
 WORKDIR /app
 
-RUN apk --no-cache add tzdata ca-certificates=20191127-r1
+RUN apk --update --no-cache add tzdata ca-certificates
 
 COPY --from=builder /app/bot .
 
