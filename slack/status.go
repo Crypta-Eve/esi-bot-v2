@@ -39,14 +39,22 @@ var statusCache = cache.New(cache.NoExpiration, cache.NoExpiration)
 var etagCache = cache.New(cache.NoExpiration, cache.NoExpiration)
 
 func (s *service) handleEveTQStatus(event Event) {
-	s.makeEveServerStatusMessage(event, eb2.ESI_BASE)
+	s.makeEveServerStatusMessage(event, eb2.ESI_TRANQUILITY)
 }
 
 func (s *service) handleEveSerenityStatus(event Event) {
-	s.makeEveServerStatusMessage(event, eb2.ESI_CHINA)
+	s.makeEveServerStatusMessage(event, eb2.ESI_SERENITY)
 }
 
-func (s *service) makeEveServerStatusMessage(event Event, base string) {
+func (s *service) makeEveServerStatusMessage(event Event, server string) {
+
+	var base string
+	var ok bool
+
+	if base, ok = eb2.ESI_URLS[server]; !ok {
+		_, _, _ = s.goslack.PostMessage(event.origin.Channel, nslack.MsgOptionText("Unable to determine server to fetch status for", true))
+		return
+	}
 
 	uri, _ := url.Parse(base)
 	uri.Path = "/v1/status"
@@ -56,6 +64,9 @@ func (s *service) makeEveServerStatusMessage(event Event, base string) {
 		_, _, _ = s.goslack.PostMessage(event.origin.Channel, nslack.MsgOptionText(err.Error(), true))
 		return
 	}
+
+	title := fmt.Sprintf("%s Status", strings.Title(server))
+
 	defer resp.Body.Close()
 	var attachment nslack.Attachment
 	if resp.StatusCode > 200 {
@@ -65,7 +76,7 @@ func (s *service) makeEveServerStatusMessage(event Event, base string) {
 			attachment = nslack.Attachment{
 				Color: "danger",
 				// Leaving this like this so that we can support other servers in the future
-				Title:    fmt.Sprintf("%s status", "Tranquility"),
+				Title:    title,
 				Text:     indeterminate,
 				Fallback: fmt.Sprintf("%s Status: %s", "Tranquility", indeterminate),
 			}
@@ -74,7 +85,7 @@ func (s *service) makeEveServerStatusMessage(event Event, base string) {
 			attachment = nslack.Attachment{
 				Color: "danger",
 				// Leaving this like this so that we can support other servers in the future
-				Title:    fmt.Sprintf("%s status", "Tranquility"),
+				Title:    title,
 				Text:     "Offline",
 				Fallback: fmt.Sprintf("%s Status: Offline", "Tranquility"),
 			}
@@ -113,7 +124,7 @@ func (s *service) makeEveServerStatusMessage(event Event, base string) {
 	}
 	attachment = nslack.Attachment{
 		Color: color,
-		Title: fmt.Sprintf("%s status", "Tranquility"),
+		Title: title,
 		Fields: []nslack.AttachmentField{
 			nslack.AttachmentField{
 				Title: "Players Online",
@@ -154,7 +165,7 @@ func determineServerRunTime(from time.Time) string {
 
 func (s *service) FetchRouteStatuses(version string) (routes []*eb2.ESIStatus, err error) {
 
-	uri, _ := url.Parse(eb2.ESI_BASE)
+	uri, _ := url.Parse(eb2.ESI_URLS[eb2.ESI_TRANQUILITY])
 	uri.Path = "status.json"
 
 	query := url.Values{}

@@ -568,7 +568,7 @@ func (s *service) BuildCommands() []Category {
 					example: func(c Command) string {
 						return format.Formatm("${prefix} ${trigger}", format.Values{
 							"prefix":  s.config.SlackPrefixes[tools.UnsignedRandomIntWithMax(len(s.config.SlackPrefixes)-1)],
-							"trigger": "/latest/universe/types",
+							"trigger": "#123",
 						})
 					},
 				},

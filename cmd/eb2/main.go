@@ -48,7 +48,7 @@ func main() {
 	server := server.NewServer(&cfg, logger, slackServ, tokenServ)
 
 	cron := gocron.New()
-	_, err = cron.AddFunc("*/2 * * * *", func() {
+	_, err = cron.AddFunc("@every 2m", func() {
 
 		routes, err := slackServ.FetchRouteStatuses("latest")
 		if err != nil {

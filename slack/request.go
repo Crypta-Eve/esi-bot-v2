@@ -260,7 +260,7 @@ func (s *service) makeESIDynamicRequestMessage(event Event) {
 
 	var base *url.URL
 	var err error
-	base, err = url.Parse(eb2.ESI_BASE)
+	base, err = url.Parse(eb2.ESI_URLS[eb2.ESI_TRANQUILITY])
 	if err != nil {
 		// TODO: Return Parsing Error
 		_, _, _ = s.goslack.PostMessage(event.origin.Channel, nslack.MsgOptionText(err.Error(), false))

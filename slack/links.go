@@ -36,9 +36,9 @@ func (s *service) makeLinkMessage(event Event) {
 	case "sso":
 		text = fmt.Sprintf("%s/issues", eb2.SSO_ISSUES)
 	case "webui", "ui":
-		text = fmt.Sprintf("%s/ui", eb2.ESI_BASE)
+		text = fmt.Sprintf("%s/ui", eb2.ESI_URLS[eb2.ESI_TRANQUILITY])
 	case "diff", "diffs":
-		text = fmt.Sprintf("%s/diff/latest/dev", eb2.ESI_BASE)
+		text = fmt.Sprintf("%s/diff/latest/dev", eb2.ESI_URLS[eb2.ESI_TRANQUILITY])
 	case "ask":
 		text = fmt.Sprintf("I have been summoned to ask you to read this important link if you want any further help! %s", eb2.ASK_TO_ASK)
 	}
