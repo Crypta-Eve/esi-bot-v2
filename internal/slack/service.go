@@ -9,6 +9,7 @@ import (
 
 	"github.com/eveisesi/eb2"
 	"github.com/google/go-github/v29/github"
+	"github.com/nlopes/slack"
 	nslack "github.com/nlopes/slack"
 	"github.com/nlopes/slack/slackevents"
 	"github.com/patrickmn/go-cache"
@@ -172,6 +173,18 @@ func (s *service) ProcessEvent(ctx context.Context, sevent *slackevents.MessageE
 			valid = true
 			break
 		}
+	}
+
+	for _, specialTerm := range []string{"xml", "crest"} {
+
+		if strings.Contains(sevent.Text, specialTerm) {
+			err := s.goslack.AddReaction("rip", slack.NewRefToMessage(sevent.Channel, sevent.TimeStamp))
+			if err != nil {
+				s.logger.WithError(err).Error("failed to reaction message with legacy term")
+			}
+			break
+		}
+
 	}
 
 	if !valid {

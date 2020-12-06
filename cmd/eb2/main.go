@@ -48,7 +48,7 @@ func main() {
 	server := server.NewServer(&cfg, logger, slackServ, tokenServ)
 
 	cron := gocron.New()
-	_, err = cron.AddFunc("@every 10s", slackServ.Run)
+	_, err = cron.AddFunc("*/2 * * * *", slackServ.Run)
 	if err != nil {
 		logger.WithError(err).Fatal("failed to configure go cron")
 	}
