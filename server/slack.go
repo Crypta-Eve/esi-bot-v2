@@ -201,7 +201,7 @@ func (s *Server) handlePostSlackInviteSend(w http.ResponseWriter, r *http.Reques
 
 	if body.Email == "" {
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(SlackInviteResponse{
+		_ = json.NewEncoder(w).Encode(SlackInviteResponse{
 			Ok:    false,
 			Error: "email_invalid: please supply a valid, non-empty email address",
 		})
@@ -263,10 +263,10 @@ func (s *Server) handlePostSlackInviteSend(w http.ResponseWriter, r *http.Reques
 		}
 	}
 
-	data, err := json.Marshal(slackResp)
+	data, _ := json.Marshal(slackResp)
 
 	w.WriteHeader(status)
-	w.Write(data)
+	_, _ = w.Write(data)
 
 }
 

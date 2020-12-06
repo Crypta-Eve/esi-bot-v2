@@ -88,7 +88,7 @@ func (l *StructuredLogger) NewLogEntry(r *http.Request) middleware.LogEntry {
 	r.Body = ioutil.NopCloser(bytes.NewBuffer(body))
 
 	var fields map[string]interface{}
-	json.Unmarshal(body, &fields)
+	_ = json.Unmarshal(body, &fields)
 
 	logFields["data"] = fields
 
@@ -103,7 +103,7 @@ type StructuredLoggerEntry struct {
 }
 
 // Write will write to logger entry once the http.Request is complete
-func (l *StructuredLoggerEntry) Write(status, bytes int, elapsed time.Duration) {
+func (l *StructuredLoggerEntry) Write(status, bytes int, header http.Header, elapsed time.Duration, extra interface{}) {
 	l.Logger = l.Logger.WithFields(logrus.Fields{
 		"resp_status": status, "resp_bytes_length": bytes,
 		"resp_elasped_ms": float64(elapsed.Nanoseconds()) / 1000000.0,
