@@ -13,3 +13,5 @@ RUN apk --update --no-cache add tzdata ca-certificates
 COPY --from=builder /app/bot .
 
 LABEL maintainer="David Douglas <david@onetwentyseven.dev>"
+
+CMD ["./bot"]

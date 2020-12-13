@@ -212,58 +212,77 @@ func (s *server) handlePostSlackInviteSend(w http.ResponseWriter, r *http.Reques
 
 	token := check.(*jwt.Token)
 
-	endpoint := "https://slack.com/api/users.admin.invite"
-
-	realName := token.Claims.(jwt.MapClaims)["name"].(string)
-
-	uri := url.Values{}
-	uri.Set("token", s.config.SlackLegacyAPIToken)
-	uri.Set("email", body.Email)
-	uri.Set("real_name", realName)
-
-	resp, err := http.PostForm(endpoint, uri)
-	if err != nil {
-		s.writeError(ctx, w, err, http.StatusInternalServerError)
+	realName, ok := token.Claims.(jwt.MapClaims)["name"].(string)
+	if !ok {
+		s.logger.WithFields(logrus.Fields{"token": token.Claims}).Error("Real Name is not a string")
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	var slackResp = &SlackInviteResponse{}
-	err = json.NewDecoder(resp.Body).Decode(slackResp)
+	type message struct {
+		Message string `json:"message"`
+	}
+
+	msg := fmt.Sprintf("%s (%s) has requested an invitation to Tweetfleet.", realName, body.Email)
+	channel, timestamp, err := s.goslack.PostMessage(s.config.SlackModChannel, nslack.MsgOptionText(msg, false))
 	if err != nil {
-		s.writeError(ctx, w, errors.Wrap(err, "unable to decode response from slack"), http.StatusInternalServerError)
+		s.logger.WithError(err).WithFields(logrus.Fields{
+			"channel":   channel,
+			"timestamp": timestamp,
+			"message":   msg,
+		}).Error("failed to post success message to mod chat.")
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	status := http.StatusOK
+	json.NewEncoder(w).Encode(message{
+		Message: "Your request has been submitted successfully. Please monitor your inbox for an invitation for the Tweetfleet Staff. Thank You",
+	})
+	w.WriteHeader(http.StatusOK)
+	return
 
-	switch slackResp.Ok {
-	case true:
-		msg := fmt.Sprintf("I've successfully invited %s (%s) to TF Slack.", realName, body.Email)
-		channel, timestamp, err := s.goslack.PostMessage(s.config.SlackModChannel, nslack.MsgOptionText(msg, false))
-		if err != nil {
-			s.logger.WithError(err).WithFields(logrus.Fields{
-				"channel":   channel,
-				"timestamp": timestamp,
-				"message":   msg,
-			}).Error("failed to post success message to mod chat.")
-		}
-	case false:
-		status = http.StatusBadRequest
-		msg := fmt.Sprintf("Uh Oh, I'm having issues inviting %s (%s) to TF Slack. Slack Response Dump: %s", realName, body.Email, slackResp.Error)
-		channel, timestamp, err := s.goslack.PostMessage(s.config.SlackModChannel, nslack.MsgOptionText(msg, false))
-		if err != nil {
-			s.logger.WithError(err).WithFields(logrus.Fields{
-				"channel":   channel,
-				"timestamp": timestamp,
-				"message":   msg,
-			}).Error("failed to post message to mod chat.")
-		}
-	}
+	// endpoint := "https://slack.com/api/users.admin.invite"
 
-	data, _ := json.Marshal(slackResp)
+	// uri := url.Values{}
+	// uri.Set("token", s.config.SlackLegacyAPIToken)
+	// uri.Set("email", body.Email)
+	// uri.Set("real_name", realName)
 
-	w.WriteHeader(status)
-	_, _ = w.Write(data)
+	// resp, err := http.PostForm(endpoint, uri)
+	// if err != nil {
+	// 	s.writeError(ctx, w, err, http.StatusInternalServerError)
+	// 	return
+	// }
+
+	// var slackResp = &SlackInviteResponse{}
+	// err = json.NewDecoder(resp.Body).Decode(slackResp)
+	// if err != nil {
+	// 	s.writeError(ctx, w, errors.Wrap(err, "unable to decode response from slack"), http.StatusInternalServerError)
+	// 	return
+	// }
+
+	// status := http.StatusOK
+
+	// switch slackResp.Ok {
+	// case true:
+
+	// case false:
+	// 	status = http.StatusBadRequest
+	// 	msg := fmt.Sprintf("Uh Oh, I'm having issues inviting %s (%s) to TF Slack. Slack Response Dump: %s", realName, body.Email, slackResp.Error)
+	// 	channel, timestamp, err := s.goslack.PostMessage(s.config.SlackModChannel, nslack.MsgOptionText(msg, false))
+	// 	if err != nil {
+	// 		s.logger.WithError(err).WithFields(logrus.Fields{
+	// 			"channel":   channel,
+	// 			"timestamp": timestamp,
+	// 			"message":   msg,
+	// 		}).Error("failed to post message to mod chat.")
+	// 	}
+	// }
+
+	// data, _ := json.Marshal(slackResp)
+
+	// w.WriteHeader(status)
+	// _, _ = w.Write(data)
 
 }
 

@@ -6,7 +6,6 @@ type Config struct {
 	SlackPingChannels     []string `envconfig:"SLACK_PING_CHANNELS" required:"true" split_words:"true"`
 	SlackPrefixes         []string `envconfig:"SLACK_PREFIXES" required:"true" split_words:"true"`
 	SlackSendStartupMsg   bool     `envconfig:"SLACK_SEND_STARTUP_MSG" default:"true"`
-	SlackLegacyAPIToken   string   `envconfig:"SLACK_LEGACY_API_TOKEN" required:"true"`
 	SlackModChannel       string   `envconfig:"SLACK_MOD_CHANNEL" required:"true"`
 	SlackESIChannel       string   `envconfig:"SLACK_ESI_CHANNEL" required:"true"`
 	SlackESIStatusChannel string   `envconfig:"SLACK_ESISTATUS_CHANNEL" required:"true"`
